@@ -1362,8 +1362,19 @@ const feed=$('#feed'), conv=$('#conv');
    the student is near the bottom; scrolling up to review is never fought. */
 function pinWatcher(box){
   let near=true;
-  const pin=()=>{if(near)box.scrollTop=box.scrollHeight;};
-  box.addEventListener('scroll',()=>{near=box.scrollHeight-box.scrollTop-box.clientHeight<100;});
+  const nearBottom=()=>{
+    if(box.scrollHeight>box.clientHeight+2)return box.scrollHeight-box.scrollTop-box.clientHeight<120;
+    const r=box.getBoundingClientRect();           // mobile: the whole page scrolls
+    return r.bottom<=innerHeight+120;
+  };
+  const pin=()=>{
+    if(!near)return;
+    if(box.scrollHeight>box.clientHeight+2){box.scrollTop=box.scrollHeight;}
+    else window.scrollTo({top:document.documentElement.scrollHeight});
+  };
+  box.addEventListener('scroll',()=>{near=nearBottom();});
+  addEventListener('scroll',()=>{near=nearBottom();},true);
+  addEventListener('resize',()=>{near=nearBottom();if(near)pin();});
   if(window.ResizeObserver&&box.firstElementChild)new ResizeObserver(pin).observe(box.firstElementChild);
   new MutationObserver(pin).observe(box,{childList:true,subtree:true});
 }
