@@ -1358,6 +1358,17 @@ const TOPICS={DR:'Domain & range',FC:'Function concept & VLT',CP:'Composition',T
    Render: Learn
 ============================================================ */
 const feed=$('#feed'), conv=$('#conv');
+/* Stick-to-bottom: whenever content changes/grows, keep pinned to bottom while
+   the student is near the bottom; scrolling up to review is never fought. */
+function pinWatcher(box){
+  let near=true;
+  const pin=()=>{if(near)box.scrollTop=box.scrollHeight;};
+  box.addEventListener('scroll',()=>{near=box.scrollHeight-box.scrollTop-box.clientHeight<100;});
+  if(window.ResizeObserver&&box.firstElementChild)new ResizeObserver(pin).observe(box.firstElementChild);
+  new MutationObserver(pin).observe(box,{childList:true,subtree:true});
+}
+pinWatcher(conv);
+const hwc=document.querySelector('#tab-hw .conv');if(hwc)pinWatcher(hwc);
 function renderRail(){
   const list=$('#secList');list.innerHTML='';
   LESSONS.forEach((s,i)=>{
