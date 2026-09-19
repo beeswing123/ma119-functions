@@ -15,6 +15,14 @@
   --zh:#d9a86c;
   --radius:12px;
 }
+html[data-theme="light"]{
+  --bg:#f6f1e8; --panel:#fffdf8; --panel2:#f4ede0; --line:#e5d8c3;
+  --txt:#33291f; --mut:#6f5f4c; --faint:#a5967e;
+  --acc:#c06a24; --acc-d:#ddc39f; --acc2:#a8581a;
+  --good:#2e7d43; --bad:#bf3b2b; --info:#4a7a99;
+  --zh:#a8681f;
+  --radius:12px;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
@@ -219,6 +227,58 @@ canvas{background:#1d1815;border-radius:9px;touch-action:none;display:block}
   .brand small{display:none}
   .conv{padding:14px 10px 8px}
 }
+
+/* ---------- Light-theme fixes for hard-coded dark surfaces ---------- */
+html[data-theme="light"] ::-webkit-scrollbar-thumb{background:#d8c9ae}
+html[data-theme="light"] nav button:hover{background:#efe6d4}
+html[data-theme="light"] nav button.active{background:#eadfc9}
+html[data-theme="light"] .chip{background:#efe6d4}
+html[data-theme="light"] .secitem:hover{background:#ece2d0}
+html[data-theme="light"] .secitem.active{background:#eadfc9}
+html[data-theme="light"] .secitem .dot{border-color:#c9b899}
+html[data-theme="light"] .mn{background:#f3e9d6}
+html[data-theme="light"] .formula{background:#fbf6ec}
+html[data-theme="light"] .choices button{background:#f1e9d8}
+html[data-theme="light"] .choices button:hover{background:#eadfc9}
+html[data-theme="light"] .choices button.correct{background:#e3efdc;border-color:#2e7d43}
+html[data-theme="light"] .choices button.wrong{background:#f6ddd7;border-color:#bf3b2b}
+html[data-theme="light"] .fb.ok{background:#e3efdc;color:#2e5c39;border-color:#a9c9a2}
+html[data-theme="light"] .fb.no{background:#f6ddd7;color:#8f2c1f;border-color:#d9a89e}
+html[data-theme="light"] .inline-input input{background:#fbf6ec}
+html[data-theme="light"] .recap{background:linear-gradient(180deg,#f8f2e6,#f4ede0)}
+html[data-theme="light"] .wbtns button{background:#f1e9d8;color:#6f5f4c}
+html[data-theme="light"] .wbtns button.on{background:#eadfc9}
+html[data-theme="light"] .readout{background:#fbf6ec}
+html[data-theme="light"] .pos{background:#e3efdc;color:#2e5c39}
+html[data-theme="light"] .neg{background:#f6ddd7;color:#8f2c1f}
+html[data-theme="light"] .hwbadge{background:#eadfc9}
+html[data-theme="light"] .hwbadge.bonus{background:#e3efdc;color:#2e5c39}
+html[data-theme="light"] .hwcard.done{border-color:#7ba37f}
+html[data-theme="light"] .progress{background:#e9decb}
+html[data-theme="light"] .opt{background:#f7f0e2}
+html[data-theme="light"] .opt.sel{background:#eadfc9}
+html[data-theme="light"] .opt.cr{background:#e3efdc;border-color:#2e7d43}
+html[data-theme="light"] .opt.wr{background:#f6ddd7;border-color:#bf3b2b}
+html[data-theme="light"] .expl{background:#f4ede0}
+html[data-theme="light"] .mtrack{background:#eee4d0}
+html[data-theme="light"] .attempt{border-bottom-color:#e9decb}
+html[data-theme="light"] .pick button{background:#f1e9d8}
+html[data-theme="light"] .pick button:hover{background:#eadfc9}
+html[data-theme="light"] .overlay{background:rgba(60,45,30,.45)}
+html[data-theme="light"] .sectstrip button{background:#efe6d4;border-color:#e0d2ba;color:#6f5f4c}
+html[data-theme="light"] .sectstrip button.on{background:#eadfc9;color:#a8581a;border-color:#d9c19a}
+html[data-theme="light"] .rvcard .src{background:#f0e2cc}
+/* Canvas widgets draw in light ink — keep the canvas backdrop dark in both themes */
+canvas{background:#171310;border-radius:12px}
+
+/* ---------- Learn helper mechanics ---------- */
+.skiprow{display:flex;justify-content:flex-end;margin-bottom:4px}
+.ghostmini{background:transparent;border:1px solid var(--line);color:var(--mut);font-size:12px;border-radius:8px;padding:4px 10px;cursor:pointer}
+.ghostmini:hover{color:var(--acc2);border-color:var(--acc-d)}
+.ghostmini:disabled{opacity:.45;cursor:default}
+.scaffold{border:1px dashed var(--acc-d);border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel)}
+.sch-head{font-size:13px;font-weight:700;color:var(--acc2);margin-bottom:6px}
+.scaffold .choices{margin:6px 0}
 </style>
 </head>
 <body>
@@ -234,6 +294,7 @@ canvas{background:#1d1815;border-radius:9px;touch-action:none;display:block}
   </nav>
   <div class="spacer"></div>
   <span class="chip" id="progressChip">§1.1 · step 1</span>
+  <button class="iconbtn" id="themeBtn" title="Toggle light / dark theme 日夜切换">Light</button>
   <button class="iconbtn" id="resetBtn" title="Clear saved progress">Reset</button>
 </header>
 
@@ -288,7 +349,7 @@ function loadStore(){
 }
 function saveStore(){ try{ localStorage.setItem(STORE,JSON.stringify(S)); }catch(e){} }
 let S = Object.assign({
-  onboarded:false, goal:'learn', level:'grade10',
+  onboarded:false, goal:'learn', level:'grade10', theme:'dark',
   sec:0, step:0, secDone:[false,false,false,false],
   hw:{}, // id: {tries, finished, firstTry}
   attempts:[], // {setId,date,ans,score,byTopic,n,timeSec,qt}
@@ -337,6 +398,67 @@ function afterAttempt(step, node, ok, fbEl){
       fbEl.textContent = step.fb || 'Not quite — give it another try. Talk it through in your head first.';
     }
   }
+}
+function startHelp(st,body,ch,fb,helper){
+  if(st._helped)return;st._helped=true;
+  S.learn['s'+S.sec+'_'+S.step]=0;addMissed('learn',S.sec,S.step);saveStore();
+  if(st.scaffold){renderScaffold(st,body,ch,fb,helper);}
+  else{finishHelp(st,body,ch,fb,helper);}
+}
+function finishHelp(st,body,ch,fb,helper){
+  if(ch)[...ch.children].forEach(x=>x.disabled=true);
+  const ip=body.querySelector('input');if(ip)ip.disabled=true;
+  const ib=body.querySelector('.inline-input button');if(ib)ib.disabled=true;
+  const sk=body.querySelector('.skiprow button');if(sk)sk.disabled=true;
+  helper.innerHTML='';
+  fb.className='fb show no';
+  fb.innerHTML=st.reveal||st.ok||'See the section recap.';
+  if(st.detail){
+    const d=el('button','ghostmini','More detail ▸ 更多');
+    const dx=el('div','expl');
+    dx.style.display='none';dx.innerHTML=st.detail;
+    d.onclick=()=>{dx.style.display=dx.style.display==='none'?'block':'none';};
+    helper.append(d,dx);
+  }
+  const row=el('div','continue-row');const nx=el('button','btn','Continue →');
+  nx.onclick=()=>advanceLesson();row.appendChild(nx);body.appendChild(row);convScroll();
+}
+function renderScaffold(st,body,ch,fb,helper){
+  const sc=el('div','scaffold');
+  const head=el('div','sch-head','Let\'s build it up in small steps 分步引导');
+  sc.appendChild(head);
+  let i=0;
+  function step(){
+    if(i>=st.scaffold.length){
+      sc.innerHTML='';
+      const done=el('div','sch-head','Now you\'ve seen every move — try the original again ↺');
+      const back=el('button','btn','Back to the question ↺');
+      back.onclick=()=>{sc.remove();fb.className='fb';fb.textContent='';
+        if(ch)ch.querySelectorAll('button').forEach(x=>{if(!x.classList.contains('correct'))x.disabled=false;});
+        const ip=body.querySelector('input');if(ip){ip.disabled=false;ip.focus();}};
+      sc.append(done,back);convScroll();return;
+    }
+    const mini=st.scaffold[i];
+    const mq=el('p','',`<b>${i+1}/${st.scaffold.length}.</b> ${mini.q}`);
+    const mch=el('div','choices');const mfb=el('div','fb');
+    let mt=0;
+    mini.choices.forEach(mc=>{
+      const mb=el('button','',mc.txt);
+      mb.onclick=()=>{
+        if(mc.ok){mch.querySelectorAll('button').forEach(x=>x.disabled=true);mb.classList.add('correct');
+          mfb.className='fb show ok';mfb.textContent=mini.oktxt;
+          const nx=el('button','ghostmini','Next ▸');nx.onclick=()=>{i++;step();};mfb.appendChild(document.createElement('br'));mfb.appendChild(nx);}
+        else{mt++;mb.disabled=(mt>=2);mb.classList.add('wrong');
+          mfb.className='fb show no';
+          mfb.textContent=mt>=2?(mini.oktxt||''):(mini.fb||'Not quite.');
+          if(mt>=2){const nx=el('button','ghostmini','Next ▸');nx.onclick=()=>{i++;step();};mfb.appendChild(document.createElement('br'));mfb.appendChild(nx);}}
+      };
+      mch.appendChild(mb);
+    });
+    const holder=el('div','');holder.append(mq,mch,mfb);
+    sc.appendChild(holder);convScroll();
+  }
+  helper.innerHTML='';body.appendChild(sc);step();
 }
 
 /* ============================================================
@@ -615,7 +737,8 @@ const LESSONS=[
 {title:'§1.1 Functions & Graphs', steps:[
   {t:'say', html:`<p>Hi again! I'm <b>Ms. Lin 林老师</b>. Today's big idea is tiny:</p>
    <p>A <b>function</b> is a machine — one input goes in, <b>exactly one</b> output comes out.</p>
-   <p class="muted">Think of a vending machine. Press one button, one drink drops. If a button sometimes dropped tea and sometimes coffee, the machine would be broken. Same for functions.</p>`},
+   <p class="muted">Think of a vending machine. Press one button, one drink drops. If a button sometimes dropped tea and sometimes coffee, the machine would be broken. Same for functions.</p>`,
+   detail:'<b>Formal definition (Thomas §1.1):</b> a function from a set D to a set R assigns to each element x in D <b>exactly one</b> element y in R. D = domain (legal inputs), range = outputs actually hit. One button → two possible drinks breaks the contract, which is why y² = x is not a function of x.'},
   {t:'say', html:`<p>Formally: <span class="math">f : D → Y</span> assigns to every <span class="math">x ∈ D</span> a <b>unique</b> <span class="zh">唯一的</span> value <span class="math">f(x)</span>.</p>
    <div class="formula">Domain 定义域 D = all allowed inputs &nbsp;·&nbsp; Range 值域 = outputs actually produced</div>
    <p>For example <span class="math">y = x²</span> is fine: x = 3 gives only 9. But <span class="math">y² = x</span> is suspicious… let's test it.</p>`},
@@ -640,6 +763,15 @@ const LESSONS=[
   {t:'input', q:'Set that denominator ≠ 0: which single value of x must we exclude? Type the number.',
    accept:v=>norm(v)==='2',
    fb:'Solve x − 2 ≠ 0. What is x not allowed to be?',
+   h2:'Solve x − 2 = 0. The excluded value is just one number — which?',
+   scaffold:[
+    {q:'We need x − 2 ≠ 0. Solve the equation x − 2 = 0. What is x?',
+     choices:[{txt:'x = 2',ok:true},{txt:'x = −2',ok:false},{txt:'x = 0',ok:false}],
+     fb:'Move the 2 across: x = …',oktxt:'x = 2 — exactly the value that turns the denominator into zero.'},
+    {q:'So which input must f(x) = 1/(x − 2) reject?',
+     choices:[{txt:'x = 2',ok:true},{txt:'x = −2',ok:false},{txt:'all x < 2',ok:false}],
+     fb:'The dangerous one — not its opposite sign.',oktxt:'Reject x = 2; every other real number is fine.'}
+   ],
    reveal:'x − 2 ≠ 0 means x ≠ 2.',
    placeholder:'x ≠ ?'},
   {t:'say', html:`<p>Domain: all reals except 2, written <span class="math">(−∞, 2) ∪ (2, ∞)</span>.</p>
@@ -655,20 +787,40 @@ const LESSONS=[
      {txt:'x ≥ 4',ok:false},
      {txt:'x ≤ 4, i.e. (−∞, 4]',ok:true},
      {txt:'x ≠ 4',ok:false}],
-   ok:'Yes — and the endpoint 4 is included, so we use ].'},
+   ok:'Yes — and the endpoint 4 is included, so we use ].',
+   h2:'Two moves: subtract 4, then divide by −1 (which flips the direction).',
+   scaffold:[
+    {q:'Step 1: subtract 4 from both sides. 4 − x ≥ 0 becomes…',
+     choices:[{txt:'−x ≥ −4',ok:true},{txt:'x ≥ 4',ok:false},{txt:'x ≥ −4',ok:false}],
+     fb:'Move the 4 across and watch the minus sign on x.',oktxt:'−x ≥ −4. The x is still negative — one more move.'},
+    {q:'Step 2: divide both sides by −1. What happens to the inequality?',
+     choices:[{txt:'It flips: x ≤ 4',ok:true},{txt:'It stays: x ≥ 4',ok:false},{txt:'It flips to x ≥ −4',ok:false}],
+     fb:'Dividing by a negative flips the direction （负数翻边）.',oktxt:'x ≤ 4, i.e. (−∞, 4].'}
+   ]},
   {t:'widget', id:'vlt',
    html:`<p>Meet the graphical version of our rule: the <b>Vertical Line Test</b> <span class="zh">垂直线检验</span> — a curve is a function iff every vertical line meets it at most once. Try all four curves in the panel.</p>`},
   {t:'ask', q:'Using the panel: the full circle FAILS. What about the upper semicircle y = √(1 − x²)?',
    choices:[
      {txt:'PASS — one height per x',ok:true},
      {txt:'FAIL — two heights per x',ok:false}],
-   ok:'Right: slicing the circle into halves gives two perfectly good functions (branches).'},
+   ok:'Right: slicing the circle into halves gives two perfectly good functions (branches).',
+   detail:'Why the test works: a vertical line is the picture of <i>one single input</i>. Crossing twice means two outputs for that x. Circles and sideways parabolas fail — yet each single BRANCH (y = +√(x+1) alone) can still pass. Splitting a failed curve into branches is a standard trick.'},
   {t:'say', html:`<p>Quick vocabulary stop. Some formulas change rules mid-stream — <b>piecewise functions</b> <span class="zh">分段函数</span>:</p>
    <div class="formula">|x| = x (x ≥ 0), &nbsp;|x| = −x (x &lt; 0)</div>
-   <p>Two special rounders: <b>floor</b> ⌊x⌋ walks LEFT to the nearest integer; <b>ceiling</b> ⌈x⌉ walks RIGHT. Parking fees run on ceilings: any fraction of an hour counts as a full one.</p>`},
+   <p>Two special rounders: <b>floor</b> ⌊x⌋ walks LEFT to the nearest integer; <b>ceiling</b> ⌈x⌉ walks RIGHT. Parking fees run on ceilings: any fraction of an hour counts as a full one.</p>`,
+   detail:'Floor has a sibling, ceiling ⌈x⌉, which walks RIGHT. Real life: a parking garage charging by the started hour uses ceiling; tax brackets and postage tiers behave like floor steps. The graph is flat segments with sudden jumps.'},
   {t:'ask', q:'Careful with negatives: ⌊−1.2⌋ = ?',
    choices:[{txt:'−2',ok:true},{txt:'−1',ok:false},{txt:'−1.2',ok:false}],
-   ok:'Yes! Floor walks LEFT, past −1, down to −2. (−1 is the classic trap.)'},
+   ok:'Yes! Floor walks LEFT, past −1, down to −2. (−1 is the classic trap.)',
+   h2:'−1.2 lies between −2 and −1; floor takes the LOWER one.',
+   scaffold:[
+    {q:'Floor is a staircase that only walks LEFT. Between which two integers does −1.2 sit?',
+     choices:[{txt:'between −2 and −1',ok:true},{txt:'between −1 and 0',ok:false},{txt:'between 1 and 2',ok:false}],
+     fb:'−1.2 sits just below −1 on the number line.',oktxt:'−2 < −1.2 < −1: it lives between −2 and −1.'},
+    {q:'Floor picks the LOWER step. So ⌊−1.2⌋ = ?',
+     choices:[{txt:'−2',ok:true},{txt:'−1',ok:false}],
+     fb:'Lower on the number line = more negative.',oktxt:'−2. The tempting −1 is the CEILING answer.'}
+   ]},
   {t:'say', html:`<p>Two more ideas:</p>
    <p><b>Increasing</b> <span class="zh">递增</span>: as x grows, f(x) grows. <b>Decreasing</b>: as x grows, f(x) falls. Always name the <i>interval</i> — 1/x is decreasing on each branch separately, but never on its whole domain (jump from −1 to 1 and watch it rise!).</p>
    <p><b>Even</b>: f(−x) = f(x), mirror across the y-axis. <b>Odd</b>: f(−x) = −f(x), spin 180° about the origin <span class="zh">偶/奇函数</span>.</p>`},
@@ -691,22 +843,39 @@ const LESSONS=[
 {title:'§1.2 Combining & Transforming', steps:[
   {t:'say', html:`<p>Functions can be added, subtracted, multiplied and divided — point by point, like numbers. The domain of any combination starts from the <b>intersection</b> <span class="zh">交集</span> D(f) ∩ D(g); both machines must accept the input.</p>
    <div class="formula">(f+g)(x)=f(x)+g(x) · (fg)(x)=f(x)g(x) · (f/g)(x)=f(x)/g(x), &nbsp;g(x)≠0</div>
-   <p>For a quotient, also delete every x where g(x)=0.</p>`},
+   <p>For a quotient, also delete every x where g(x)=0.</p>`,
+   detail:'Sums, products and quotients demand BOTH ingredient rules at once, so domains intersect. Quotients then subtract one more thing: every zero of the denominator — even if the numerator also vanishes there (0/0 is still banned). Bracket vs paren follows each piece\'s ≤/≥ or </> rule.'},
   {t:'ask', q:'f(x) = √x and g(x) = √(1 − x). What is D(f)?',
    choices:[{txt:'[0, ∞)',ok:true},{txt:'(−∞, 1]',ok:false},{txt:'(−∞, ∞)',ok:false}],
    ok:'And D(g) = (−∞, 1].'},
   {t:'ask', q:'So D(f) ∩ D(g) = ?',
    choices:[{txt:'[0, 1]',ok:true},{txt:'(0, 1)',ok:false},{txt:'[0, ∞)',ok:false}],
-   ok:'[0,1] — every input must survive both square roots.'},
+   ok:'[0,1] — every input must survive both square roots.',
+   h2:'Draw both sets on one number line and keep only the shared part.',
+   scaffold:[
+    {q:'D(f) = [0, ∞) is the right ray from 0; D(g) = (−∞, 1] is everything up to 1. Where do they OVERLAP?',
+     choices:[{txt:'[0, 1]',ok:true},{txt:'(0, 1)',ok:false},{txt:'(−∞, 1]',ok:false}],
+     fb:'Overlap = points belonging to BOTH sets.',oktxt:'[0, 1] — 0 included (f needs it), 1 included (g allows it).'}
+   ]},
   {t:'say', html:`<p>The star of this section: <b>composition</b> <span class="zh">复合</span> — the output of one machine feeds the next:</p>
    <div class="formula">(f ∘ g)(x) = f(g(x)) &nbsp;— apply g FIRST, then f (read right to left)</div>
-   <p>Two gates must both open: x ∈ D(g), and g(x) ∈ D(f). Order matters — socks before shoes: f ∘ g is usually <b>not</b> g ∘ f.</p>`},
+   <p>Two gates must both open: x ∈ D(g), and g(x) ∈ D(f). Order matters — socks before shoes: f ∘ g is usually <b>not</b> g ∘ f.</p>`,
+   detail:'Decomposing h(x) = cos²(5x), peel inside-out: g₁(x) = 5x → g₂(u) = cos u → f(v) = v². Verify by re-nesting: f(g₂(g₁(x))) = cos²(5x). ✓ Right-to-left reading of f ∘ g ∘ h is your friend.'},
   {t:'ask', q:'Let f(x) = x² + 1 and g(x) = x − 1. Compute (f ∘ g)(x) = f(g(x)).',
    choices:[
      {txt:'(x − 1)² + 1',ok:true},
      {txt:'x²',ok:false},
      {txt:'(x + 1)² − 1',ok:false}],
-   ok:'Yes — feed x−1 into the square-plus-one machine. (This is homework Q3 — you just did the hard half.)'},
+   ok:'Yes — feed x−1 into the square-plus-one machine. (This is homework Q3 — you just did the hard half.)',
+   h2:'g first: replace every x in x² + 1 with (x − 1).',
+   scaffold:[
+    {q:'(f ∘ g)(x) reads: which machine runs FIRST?',
+     choices:[{txt:'g runs first, its output feeds f',ok:true},{txt:'f runs first, then g',ok:false}],
+     fb:'The machine written closest to x is the inner one.',oktxt:'g first: g(x) = x − 1.'},
+    {q:'Now feed g(x) = x − 1 into f: f(something) = (something)² + 1. So (f ∘ g)(x) = ?',
+     choices:[{txt:'(x − 1)² + 1',ok:true},{txt:'x² + 1 − 1',ok:false}],
+     fb:'Replace the x inside f by the WHOLE thing (x − 1) — keep parentheses!',oktxt:'(x − 1)² + 1. Parentheses are the whole game.'}
+   ]},
   {t:'ask', q:'Now the other order: (g ∘ f)(x) = g(f(x)) = ?',
    choices:[
      {txt:'x² + 1 − 1 = x²',ok:true},
@@ -744,10 +913,20 @@ const LESSONS=[
 {title:'§1.3 Trigonometric Functions', steps:[
   {t:'say', html:`<p>Trig time — but in the units calculus actually uses: <b>radians</b> <span class="zh">弧度</span>.</p>
    <div class="formula">θ = s / r &nbsp;·&nbsp; on the unit circle θ equals the arc length &nbsp;·&nbsp; π rad = 180°</div>
-   <p>Degree → radian: × π/180. Radian → degree: × 180/π.</p>`},
+   <p>Degree → radian: × π/180. Radian → degree: × 180/π.</p>`,
+   detail:'One radian is the angle subtending an arc equal in length to the radius: s = rθ. A full turn is 2π rad because the circumference is 2πr. Radians are dimensionless (length/length) — and calculus identities like d/dx sin x = cos x hold ONLY in radians.'},
   {t:'ask', q:'Convert 225° to radians. (225 = 180 + 45…)',
    choices:[{txt:'5π/4',ok:true},{txt:'3π/4',ok:false},{txt:'7π/6',ok:false},{txt:'5π/6',ok:false}],
-   ok:'225·π/180 = 5π/4. That lands in Quadrant III.'},
+   ok:'225·π/180 = 5π/4. That lands in Quadrant III.',
+   h2:'Multiply by π/180, then simplify the fraction 225/180.',
+   scaffold:[
+    {q:'The exchange rate: 180° = π. So multiply degrees by…',
+     choices:[{txt:'π/180',ok:true},{txt:'180/π',ok:false}],
+     fb:'Check units: degrees must cancel, radians must survive.',oktxt:'π/180 — degrees cancel, radians remain.'},
+    {q:'225 · π/180 = 225π/180. Simplify 225/180 by dividing out 45.',
+     choices:[{txt:'5/4 → 5π/4',ok:true},{txt:'4/5 → 4π/5',ok:false},{txt:'9/8 → 9π/8',ok:false}],
+     fb:'225 = 5·45 and 180 = 4·45.',oktxt:'5π/4 — and that lands in Quadrant III.'}
+   ]},
   {t:'ask', q:'Convert 7π/6 back to degrees.',
    choices:[{txt:'210°',ok:true},{txt:'240°',ok:false},{txt:'150°',ok:false},{txt:'300°',ok:false}],
    ok:'210° — π + π/6, again Quadrant III.'},
@@ -770,7 +949,17 @@ const LESSONS=[
    <div class="formula">cos²θ + sin²θ = 1 &nbsp;·&nbsp; 1 + tan²θ = sec²θ</div>`},
   {t:'ask', q:'sin θ = 3/5 with θ in Quadrant II. The identity gives cos²θ = 1 − 9/25 = 16/25. Pick the sign with CAST — cos θ = ?',
    choices:[{txt:'−4/5',ok:true},{txt:'4/5',ok:false},{txt:'±4/5',ok:false}],
-   ok:'−4/5: identity gives the size, quadrant gives the sign. Cosine is negative in QII.'},
+   ok:'−4/5: identity gives the size, quadrant gives the sign. Cosine is negative in QII.',
+   h2:'First |cos θ| from the identity, then a separate CAST sign check.',
+   detail:'CAST is unit-circle symmetry, tabulated: the point is (cos θ, sin θ); the x-coordinate goes negative on the left half, the y-coordinate goes negative on the bottom half. The reference angle (acute angle to the x-axis) supplies the SIZE; the quadrant supplies the SIGN — two independent decisions.',
+   scaffold:[
+    {q:'cos²θ = 1 − 9/25 = 16/25. So |cos θ| = ?',
+     choices:[{txt:'4/5',ok:true},{txt:'16/25',ok:false},{txt:'5/4',ok:false}],
+     fb:'Square root top and bottom separately.',oktxt:'|cos θ| = 4/5. The identity gives SIZE only.'},
+    {q:'θ is in Quadrant II. What sign does CAST give cosine there?',
+     choices:[{txt:'Negative',ok:true},{txt:'Positive',ok:false}],
+     fb:'In QII only sine is positive.',oktxt:'Negative → cos θ = −4/5. Size from identity, sign from quadrant.'}
+   ]},
   {t:'say', html:`<p>Three workhorses for later chapters:</p>
    <div class="formula">sin 2θ = 2 sin θ cos θ<br>cos 2θ = 2cos²θ − 1 = 1 − 2sin²θ<br><b>Law of Cosines</b> 余弦定理: c² = a² + b² − 2ab cos C</div>
    <p>When C = 90°, cos C = 0 and Pythagoras reappears as the special case.</p>`},
@@ -799,7 +988,8 @@ const LESSONS=[
    choices:[
      {txt:'No — undersampling faked it; zoom in to see the fast wave',ok:true},
      {txt:'Yes — sin(100x) is really a slow wave',ok:false}],
-   ok:'Exactly. A smooth-looking plot of a fast function is a warning sign, not a result. Same effect makes wagon wheels spin backward in films.'},
+   ok:'Exactly. A smooth-looking plot of a fast function is a warning sign, not a result. Same effect makes wagon wheels spin backward in films.',
+   detail:'A screen samples the curve at finitely many pixels. With fewer than ~10 sample points per period, connecting the dots fabricates a slow fake wave — aliasing. Cure: zoom in so a period spans many pixels, or plot fewer periods per screen. The same effect makes car wheels spin backwards in videos.'},
   {t:'say', html:`<p><b>4. The missing branch.</b> Some software draws y = x^(1/3) only for x ≥ 0 because it computes via ln x, which dies for negatives. The real cube root exists everywhere; know the domain before you plot.</p>
    <p>When you have real <i>data</i> instead of a formula: <b>least-squares regression</b> <span class="zh">最小二乘回归</span> picks the curve minimizing Σ(yᵢ − f(xᵢ))². Workflow: scatterplot → choose a model family → fit → read the curve.</p>`},
   {t:'ask', q:'A quadratic fits tuberculosis data beautifully inside 1900–1980, but curves upward after 2000, predicting deaths rise again. Should we trust that prediction?',
@@ -814,8 +1004,41 @@ const LESSONS=[
           'Know the true domain (cube root has two branches)',
           'Least squares minimizes squared vertical errors',
           'Extrapolation is riskier than interpolation']}
+]},
+
+/* ---------------- §1.5 Word Equations ---------------- */
+{title:'Word Equations · 公式输入', intro:'Type math like a pro in Microsoft Word — for lab reports and write-ups.', steps:[
+ {t:'say', html:`<p>New superpower: Word has a built-in equation editor <span class="zh">公式编辑器</span>. Windows: press <b>Alt + =</b>. Mac: press <b>Control + =</b>. Or Insert → Equation. Inside the slot you type math in <b>UnicodeMath</b> — and Word builds it up live. You can even switch the input to <b>LaTeX</b> mode (Equation ribbon → {} LaTeX).</p>`},
+ {t:'ask', q:'You are on Windows. The fastest way to open an equation slot is…',
+  choices:[{txt:'Alt + =',ok:true},{txt:'Ctrl + V',ok:false},{txt:'Shift + F3',ok:false},{txt:'Insert → Symbol',ok:false}],
+  ok:'Alt+= opens the built-up equation slot. Mac users: Control+=. Two keystrokes and you are typing math.',
+  fb:'Look for the one that involves the = key.'},
+ {t:'say', html:`<p>Building blocks — all inside the equation slot:</p>
+  <ul class="recap"><li><b>Fraction</b>: type <code>a/b</code> then Space → builds a stacked fraction. Brackets group: <code>(a+b)/(c+d)</code>.</li>
+  <li><b>Superscript</b> 上标: <code>x^2</code> + Space. <b>Subscript</b> 下标: <code>x_1</code> + Space.</li>
+  <li><b>Symbols by name</b>: <code>\\alpha</code> ␣ → α, <code>\\beta</code>, <code>\\pi</code> → π, <code>\\theta</code> → θ, <code>\\sqrt</code> ␣ → √.</li></ul>
+  <p>The trick behind all of them: <b>Space triggers the build-up conversion</b>.</p>`},
+ {t:'ask', q:'In UnicodeMath, how do you type x squared so it builds up?',
+  choices:[{txt:'x^2 then Space',ok:true},{txt:'x2',ok:false},{txt:'x² then Enter',ok:false},{txt:'x^2 then Enter',ok:false}],
+  ok:'Space is the trigger; Enter just ends the line. x^2␣ → x².',
+  fb:'One key makes the conversion happen — it is not Enter.'},
+ {t:'say', html:`<p>Calculus & symbols menu: <code>\\int</code> ␣ ∫, <code>\\sum</code> ␣ Σ, <code>\\lim</code> ␣ lim, <code>\\infty</code> ␣ ∞, <code>\\le</code> ␣ ≤, <code>\\ge</code> ␣ ≥, <code>\\ne</code> ␣ ≠, <code>\\pm</code> ␣ ±, <code>\\times</code> ␣ ×, <code>\\to</code> ␣ →. Type the backslash-name, hit Space, done.</p>`},
+ {t:'ask', q:'Which keystrokes produce π in a Word equation?',
+  choices:[{txt:'\\pi then Space',ok:true},{txt:'pi',ok:false},{txt:'3.14',ok:false},{txt:'Alt+P',ok:false}],
+  ok:'Backslash + name + Space = symbol. Works for the whole Greek alphabet.',
+  fb:'Symbols are summoned by their backslash names.'},
+ {t:'say', html:`<p>Pro tier <span class="zh">进阶</span>: switch the ribbon to <b>LaTeX</b> mode and type <code>\\frac{a}{b}</code>, <code>\\sqrt[n]{x}</code>, auto-sizing <code>\\left( \\right)</code>. Touchscreen? <b>Ink Equation</b> converts your handwriting. Warning: ^ and _ only work <i>inside</i> an equation slot — in normal text they stay literal characters.</p>`},
+ {t:'ask', q:'In LaTeX mode, the fraction a over b is written…',
+  choices:[{txt:'\\frac{a}{b}',ok:true},{txt:'a/b',ok:false},{txt:'\\frac a b',ok:false},{txt:'(a)/(b)',ok:false}],
+  ok:'\\frac{numerator}{denominator} — braces group. (a/b is the UnicodeMath way.)',
+  fb:'LaTeX wants backslash-frac with two brace groups.'},
+ {t:'recap', title:'Word Equations Takeaways', mn:'Alt+= to open · ^ _ + Space build up · \\name + Space summons symbols · LaTeX \\frac{}{} — four moves cover 90% of a lab report.'}
 ]}
 ];
+
+/* normalization (needs LESSONS): theme whitelist + extend saved secDone for new sections */
+if(S.theme!=='light')S.theme='dark';
+if(Array.isArray(S.secDone)&&S.secDone.length<LESSONS.length)S.secDone.length=LESSONS.length;
 
 /* ============================================================
    Homework — guided, never solved up front
@@ -836,7 +1059,13 @@ const HW=[
      {txt:'[−3, 2) ∪ (2, ∞)',ok:true},
      {txt:'(−3, 2) ∪ (2, ∞)',ok:false},
      {txt:'[−3, ∞)',ok:false}],
-   ok:'That is it: x ≥ −3 with the point x = 2 removed. −3 is included; 2 is excluded from both sides.'},
+   ok:'That is it: x ≥ −3 with the point x = 2 removed. −3 is included; 2 is excluded from both sides.',
+   h2:'Start at −3 with a bracket, open a hole at 2, extend to ∞.',
+   scaffold:[
+    {q:'Rule 2: x ≥ −3. Rule 1: x ≠ 2. Shade [−3, ∞) on a number line, then punch a hole at 2. What is left?',
+     choices:[{txt:'[−3, 2) ∪ (2, ∞)',ok:true},{txt:'(−3, 2) ∪ (2, ∞)',ok:false},{txt:'[−3, 2] ∪ (2, ∞)',ok:false}],
+     fb:'−3 is INCLUDED (≥); the hole at 2 splits the ray in two.',oktxt:'[−3, 2) ∪ (2, ∞): bracket at −3, round parens around the hole.'}
+   ]},
   {t:'input', q:'Your turn to finish: write the range. Think piece by piece — as x → 2⁻ and x → 2⁺, what does 1/(x − 2) do? Write your range in interval form (a careful attempt, then compare with the walkthrough).',
    accept:v=>v.length>4,
    free:true,
@@ -1144,12 +1373,23 @@ function renderLesson(){
 }
 function addStepNode(st,interactive){
   if(st.t==='say'){
-    feed.appendChild(teacherCard(st.html||`<p>${st.en||''}</p>`));
+    const node=teacherCard(st.html||`<p>${st.en||''}</p>`);
+    if(st.detail){
+      const body=node.querySelector('.bubble');
+      const d=el('button','ghostmini','More detail ▸ 更多');
+      const dx=el('div','expl');
+      dx.style.display='none';dx.innerHTML=st.detail;
+      d.onclick=()=>{dx.style.display=dx.style.display==='none'?'block':'none';};
+      body.append(d,dx);
+    }
+    feed.appendChild(node);
     if(interactive){
       const row=el('div','continue-row');
       const b=el('button','btn','Continue →');
       b.onclick=()=>advanceLesson();
-      row.appendChild(b);feed.appendChild(row);
+      const sk=el('button','ghostmini','Skip ▸');
+      sk.title='Skip to next 略过';sk.onclick=()=>advanceLesson();
+      row.append(b,sk);feed.appendChild(row);
     }
   }else if(st.t==='widget'){
     if(st.html) feed.appendChild(teacherCard(st.html));
@@ -1180,44 +1420,102 @@ function addStepNode(st,interactive){
       row.appendChild(b);feed.appendChild(row);
     }
   }else if(st.t==='ask'){
-    const node=teacherCard('');
-    node.querySelector('.bubble').classList.add('askcard');
-    node.querySelector('.bubble').innerHTML+=`<p>${st.q}</p>`;
-    const body=node.querySelector('.bubble');
-    const fb=el('div','fb');body.appendChild(fb);
-    if(st.choices){
-      const wrap=el('div','choices');
-      st.choices.forEach(c=>{
-        const b=el('button','',c.txt);
-        b.onclick=()=>{
-          if(c.ok){
-            [...wrap.children].forEach(x=>x.disabled=true);
-            b.classList.add('correct');
-            afterAttempt(st,body,true,fb);
+    const node=teacherCard('');const body=node.querySelector('.bubble');body.classList.add('askcard');
+    st._helped=false;
+    body.innerHTML+=`<p>${st.q}</p>`;
+    const skipRow=el('div','skiprow');
+    const sk=el('button','ghostmini','Skip ▸');
+    sk.title='Skip this question 跳过此题';
+    sk.onclick=()=>{S.learn['s'+S.sec+'_'+S.step]=0;addMissed('learn',S.sec,S.step);saveStore();advanceLesson();};
+    skipRow.appendChild(sk);body.appendChild(skipRow);
+    const fb=el('div','fb');const ch=el('div','choices');
+    const helper=el('div','');
+    body.append(ch,fb,helper);
+    st.choices.forEach(c=>{
+      const b=el('button','',c.txt);
+      b.onclick=()=>{
+        if(c.ok){
+          const firstOk=!st._tries;
+          S.learn['s'+S.sec+'_'+S.step]=firstOk?1:0;
+          if(!firstOk)addMissed('learn',S.sec,S.step);
+          saveStore();
+          [...ch.children].forEach(x=>x.disabled=true);b.classList.add('correct');
+          sk.disabled=true;helper.innerHTML='';
+          fb.className='fb show ok';fb.textContent=st.ok||'Correct.';
+          const row=el('div','continue-row');const nx=el('button','btn','Continue →');
+          nx.onclick=()=>advanceLesson();row.appendChild(nx);body.appendChild(row);convScroll();
+        }else{
+          st._tries=(st._tries||0)+1;b.disabled=true;b.classList.add('wrong');
+          fb.className='fb show no';
+          if(st._tries===1){
+            fb.textContent=st.fb||'Not quite — try once more.';
+            helper.innerHTML='';
+            const stuck=el('button','ghostmini','I\'m stuck — teach me 让我学');
+            stuck.onclick=()=>startHelp(st,body,ch,fb,helper);
+            helper.appendChild(stuck);
           }else{
-            b.disabled=true; b.classList.add('wrong');
-            afterAttempt(st,body,false,fb);
+            fb.textContent=st.h2||st.fb||'Let me help.';
+            helper.innerHTML='';
+            const retry=el('button','ghostmini','Try again ↺');
+            const show=el('button','ghostmini','Show explanation ▸');
+            retry.onclick=()=>{fb.className='fb';fb.textContent='';helper.innerHTML='';ch.querySelectorAll('button').forEach(x=>{if(!x.classList.contains('correct'))x.disabled=false;});};
+            show.onclick=()=>finishHelp(st,body,ch,fb,helper);
+            helper.append(retry,show);
           }
-        };
-        wrap.appendChild(b);
-      });
-      body.appendChild(wrap);
-    }
+        }
+        convScroll();
+      };
+      ch.appendChild(b);
+    });
     feed.appendChild(node);
   }else if(st.t==='input'){
     const node=teacherCard('');
     const body=node.querySelector('.bubble');body.classList.add('askcard');
+    st._helped=false;
     body.innerHTML+=`<p>${st.q}</p>`;
-    const fb=el('div','fb');
+    const skipRow=el('div','skiprow');
+    const sk=el('button','ghostmini','Skip ▸');
+    sk.title='Skip this question 跳过此题';
+    sk.onclick=()=>{S.learn['s'+S.sec+'_'+S.step]=0;addMissed('learn',S.sec,S.step);saveStore();advanceLesson();};
+    skipRow.appendChild(sk);body.appendChild(skipRow);
+    const fb=el('div','fb');const helper=el('div','');
     const form=el('div','inline-input');
     const inp=el('input');inp.placeholder=st.placeholder||'Type your answer';
     const btn=el('button','','Check');
-    form.append(inp,btn);body.append(form,fb);
+    form.append(inp,btn);body.append(form,fb,helper);
+    const succeed=()=>{
+      const firstOk=!st._tries;
+      S.learn['s'+S.sec+'_'+S.step]=firstOk?1:0;
+      if(!firstOk)addMissed('learn',S.sec,S.step);
+      saveStore();
+      inp.disabled=true;btn.disabled=true;sk.disabled=true;helper.innerHTML='';
+      fb.className='fb show ok';fb.textContent=st.ok||'Correct.';
+      const row=el('div','continue-row');const nx=el('button','btn','Continue →');
+      nx.onclick=()=>advanceLesson();row.appendChild(nx);body.appendChild(row);convScroll();
+    };
+    const fail=()=>{
+      st._tries=(st._tries||0)+1;
+      fb.className='fb show no';
+      if(st._tries===1){
+        fb.textContent=st.fb||'Not quite — try once more.';
+        helper.innerHTML='';
+        const stuck=el('button','ghostmini','I\'m stuck — teach me 让我学');
+        stuck.onclick=()=>startHelp(st,body,null,fb,helper);
+        helper.appendChild(stuck);
+      }else{
+        fb.textContent=st.h2||st.fb||'Let me help.';
+        helper.innerHTML='';
+        const retry=el('button','ghostmini','Try again ↺');
+        const show=el('button','ghostmini','Show explanation ▸');
+        retry.onclick=()=>{fb.className='fb';fb.textContent='';helper.innerHTML='';inp.disabled=false;btn.disabled=false;inp.focus();};
+        show.onclick=()=>finishHelp(st,body,null,fb,helper);
+        helper.append(retry,show);
+      }
+      convScroll();
+    };
     const submit=()=>{
       if(!inp.value.trim())return;
-      const ok=st.accept(inp.value);
-      inp.disabled=true;btn.disabled=true;
-      afterAttempt(st,body,ok,fb);
+      if(st.accept(inp.value))succeed();else fail();
     };
     btn.onclick=submit;inp.addEventListener('keydown',e=>{if(e.key==='Enter')submit();});
     feed.appendChild(node);
@@ -1312,7 +1610,7 @@ function renderHWSession(h){
   }
   showStep();
 }
-function convScroll(){const c=$('#tab-hw .conv');setTimeout(()=>c.scrollTop=c.scrollHeight,40);}
+function convScroll(){['#tab-hw .conv','#conv'].forEach(sel=>{const c=$(sel);if(c)setTimeout(()=>c.scrollTop=c.scrollHeight,40);});}
 
 /* ============================================================
    Render: Quiz
@@ -1577,6 +1875,16 @@ function setTab(name){
 }
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 $('#resetBtn').onclick=()=>{if(confirm('Clear all saved progress, quiz history and settings?')){localStorage.removeItem(STORE);location.reload();}};
+
+const tb=$('#themeBtn');
+function applyTheme(){
+  document.documentElement.dataset.theme=S.theme;
+  tb.textContent=S.theme==='dark'?'Light':'Dark';
+  const m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.content=S.theme==='dark'?'#201a17':'#f6f1e8';
+}
+tb.onclick=()=>{S.theme=S.theme==='dark'?'light':'dark';saveStore();applyTheme();};
+applyTheme();
 
 const ONBOARD=[
   {title:'Welcome to MA119 👋',
