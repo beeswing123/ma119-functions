@@ -219,6 +219,17 @@ canvas{background:#16181d;border-radius:9px;touch-action:none;display:block}
 .sectstrip{display:none;gap:6px;overflow-x:auto;padding:10px 14px 0;border-bottom:1px solid var(--line)}
 .sectstrip button{flex-shrink:0;background:#242830;border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:5px 11px;font-size:12.5px;white-space:nowrap}
 .sectstrip button.on{color:var(--acc2);border-color:var(--acc-d);background:#2a3140}
+.sectstrip button.chtab{font-weight:700;color:var(--faint);letter-spacing:.3px}
+.sectstrip button.chtab.on{color:var(--acc2)}
+/* Chapter switch (rail + hw/quiz/words tabs) */
+.chswitch{display:flex;gap:8px;margin:0 0 12px}
+.chswitch button{flex:1;background:#242830;border:1px solid var(--line);color:var(--mut);border-radius:9px;padding:8px 10px;font-size:13px;font-weight:600;cursor:pointer}
+.chswitch button:hover{border-color:var(--acc-d);color:var(--acc2)}
+.chswitch button.on{color:var(--acc2);border-color:var(--acc-d);background:#2a3140;cursor:default}
+.rail .chswitch{margin:10px 8px 2px;flex-direction:column;gap:6px}
+.rail .chswitch button{flex:none;font-size:12.5px;padding:7px 10px;text-align:left}
+.mchap-head{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--faint);margin:14px 0 6px;font-weight:700}
+.mchap-head:first-child{margin-top:2px}
 .kbd-hint{font-size:11.5px;color:var(--faint)}
 .rvcard{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;margin-bottom:12px}
 .rvcard .src{font-size:11px;font-weight:700;color:var(--acc2);background:#2a3140;border-radius:10px;padding:2px 9px;display:inline-block}
@@ -279,6 +290,8 @@ html[data-theme="light"] .pick button:hover{background:#e3e8f2}
 html[data-theme="light"] .overlay{background:rgba(25,32,48,.4)}
 html[data-theme="light"] .sectstrip button{background:#eceff4;border-color:#d4dae4;color:#5a6270}
 html[data-theme="light"] .sectstrip button.on{background:#e3e8f2;color:#2456b8;border-color:#c6d2ea}
+html[data-theme="light"] .chswitch button{background:#eceff4;border-color:#d4dae4;color:#5a6270}
+html[data-theme="light"] .chswitch button.on{background:#e3e8f2;color:#2456b8;border-color:#c6d2ea}
 html[data-theme="light"] .rvcard .src{background:#e4e9f2}
 /* Canvas widgets draw in light ink — keep the canvas backdrop dark in both themes */
 canvas{background:#15171c;border-radius:12px}

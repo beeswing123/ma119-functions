@@ -391,6 +391,242 @@ WIDGETS.alias={
   }
 };
 
+/* ---- W6: Secant rotating into the tangent (§2.1) ---- */
+WIDGETS.secant={
+  mount(host){
+    host.innerHTML=`
+      <h4>Secant → Tangent <span class="zh">割线转动为切线</span></h4>
+      <div class="wsub">P is fixed at <span class="math">t = 2</span>. Slide <span class="math">h</span> so Q moves toward P; the secant rotates and its slope settles onto the tangent — that limiting slope is the instantaneous rate.</div>
+      <div class="wrow">
+        <canvas id="scC" width="360" height="300"></canvas>
+        <div class="wcontrols">
+          <div class="wbtns" id="scMode">
+            <button data-m="para" class="on">y = x²</button>
+            <button data-m="fall">y = 4.9t² (falling object)</button>
+          </div>
+          <label>h &nbsp;(Q is at 2 + h) <b id="scH">1.00</b><input type="range" id="scHIn" min="0.01" max="2" step="0.01" value="1"></label>
+          <div class="wbtns" id="scQuick">
+            <button data-h="1">h = 1</button>
+            <button data-h="0.1">h = 0.1</button>
+            <button data-h="0.01">h = 0.01</button>
+          </div>
+          <div class="readout" id="scOut"></div>
+          <p class="muted" style="font-size:12.5px">Blue secant = average rate · green dashed tangent = instantaneous rate. As h → 0 they become the same line.</p>
+        </div>
+      </div>`;
+    const $=s=>host.querySelector(s);
+    const cv=$('#scC'),ctx=cv.getContext('2d'),W=360,H=300,mL=36,mB=24,mT=12;
+    let mode='para';
+    const f=x=>mode==='para'?x*x:4.9*x*x;
+    const a=2;
+    const xmin=0,xmax=4.4,ymin=0,ymax=24;
+    const X=x=>mL+(x-xmin)/(xmax-xmin)*(W-mL-8);
+    const Y=y=>H-mB-(y-ymin)/(ymax-ymin)*(H-mB-mT);
+    function lineInView(m,pt){
+      // draw y = pt.y + m(x - pt.x), clipped to view box
+      const xL=xmin,xR=xmax;
+      ctx.beginPath();
+      ctx.moveTo(X(xL),Y(pt.y+m*(xL-pt.x)));
+      ctx.lineTo(X(xR),Y(pt.y+m*(xR-pt.x)));
+      ctx.stroke();
+    }
+    function draw(){
+      const h=+$('#scHIn').value;
+      const fa=f(a), fb=f(a+h), mSec=(fb-fa)/h, mTan=mode==='para'?4:19.6;
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle='#20242d';ctx.lineWidth=1;
+      for(let y=0;y<=24;y+=4){ctx.beginPath();ctx.moveTo(mL,Y(y));ctx.lineTo(W-8,Y(y));ctx.stroke();}
+      for(let x=0;x<=4;x++){ctx.beginPath();ctx.moveTo(X(x),mT);ctx.lineTo(X(x),H-mB);ctx.stroke();}
+      ctx.strokeStyle='#3c4250';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(mL,Y(0));ctx.lineTo(W-8,Y(0));ctx.moveTo(X(0),mT);ctx.lineTo(X(0),H-mB);ctx.stroke();
+      ctx.fillStyle='#6f7683';ctx.font='10px sans-serif';
+      ctx.fillText(mode==='para'?'y':'height y',8,mT+6);
+      ctx.fillText(mode==='para'?'x':'time t →',W-52,H-7);
+      // curve
+      ctx.strokeStyle='#5f8af7';ctx.lineWidth=2.4;ctx.beginPath();
+      for(let px=mL;px<=W-8;px++){const x=xmin+(px-mL)/(W-mL-8)*(xmax-xmin),y=f(x);
+        if(Y(y)<mT-30||Y(y)>H-mB+30){ctx.moveTo(px,Y(y));continue;}
+        px===mL?ctx.moveTo(px,Y(y)):ctx.lineTo(px,Y(y));}
+      ctx.stroke();
+      // tangent (green dashed)
+      ctx.strokeStyle='#67c587';ctx.lineWidth=1.8;ctx.setLineDash([6,4]);
+      lineInView(mTan,{x:a,y:fa});ctx.setLineDash([]);
+      // secant (blue solid)
+      ctx.strokeStyle='#8fb0ff';ctx.lineWidth=2;
+      lineInView(mSec,{x:a,y:fa});
+      // P and Q
+      ctx.fillStyle='#67c587';ctx.beginPath();ctx.arc(X(a),Y(fa),5,0,7);ctx.fill();
+      ctx.fillStyle='#8fb0ff';ctx.beginPath();ctx.arc(X(a+h),Y(fb),5,0,7);ctx.fill();
+      ctx.fillStyle='#a0a8b4';ctx.font='12px sans-serif';ctx.textAlign='right';
+      ctx.fillText('P (2, '+(mode==='para'?'4':'19.6')+')',X(a)-8,Y(fa)-8);
+      ctx.textAlign='left';ctx.fillText('Q',X(a+h)+8,Y(fb)-6);
+      $('#scH').textContent=(+h).toFixed(2);
+      const gap=Math.abs(mSec-mTan);
+      $('#scOut').innerHTML= mode==='para'
+        ? `secant slope = ((2+h)² − 4)/h = <b>4 + ${(+h).toFixed(2)}</b> = <b>${mSec.toFixed(3)}</b><br>tangent slope at P = <b>4</b> · gap ${gap<0.0005?'≈ 0 ✔':gap.toFixed(3)}`
+        : `v̄ = 19.6 + 4.9h = <b>${mSec.toFixed(3)} m/s</b><br>v(2) (tangent) = <b>19.6 m/s</b> · gap ${gap<0.005?'≈ 0 ✔':gap.toFixed(3)+' m/s'}`;
+    }
+    $('#scMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.m;[...$('#scMode').children].forEach(c=>c.classList.remove('on'));b.classList.add('on');draw();});
+    $('#scQuick').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.dataset.h==null)return;$('#scHIn').value=b.dataset.h;draw();});
+    $('#scHIn').addEventListener('input',draw);
+    draw();
+  }
+};
+
+/* ---- W7: epsilon–delta tolerance game (§2.3) ---- */
+WIDGETS.epsd={
+  mount(host){
+    host.innerHTML=`
+      <h4>The ε–δ Tolerance Game <span class="zh">ε–δ 精度挑战</span></h4>
+      <div class="wsub">Green band = output tolerance ε around L = 5 (or 9). Blue band = your input window δ. Win when <b>every</b> punctured x in the blue band maps <b>inside</b> the green band. Like a machining spec: ε is the allowed part error, δ is how precisely to set the machine.</div>
+      <div class="wrow">
+        <canvas id="epC" width="360" height="300"></canvas>
+        <div class="wcontrols">
+          <div class="wbtns" id="epMode">
+            <button data-m="lin" class="on">f(x) = 2x − 1, c = 3, L = 5</button>
+            <button data-m="quad">f(x) = x², c = 3, L = 9</button>
+          </div>
+          <label>ε (vertical tolerance) <b id="epE">1.00</b><input type="range" id="epEin" min="0.15" max="3" step="0.01" value="1"></label>
+          <label>δ (your horizontal window) <b id="epD">0.80</b><input type="range" id="epDin" min="0.02" max="2" step="0.01" value="0.8"></label>
+          <div class="readout" id="epOut"></div>
+          <div class="wbtns" id="epBtns">
+            <button id="epChal">Challenge me — random ε</button>
+            <button id="epShow">Show the winning δ</button>
+          </div>
+        </div>
+      </div>`;
+    const $=s=>host.querySelector(s);
+    const cv=$('#epC'),ctx=cv.getContext('2d'),W=360,H=300,mL=36,mB=26,mT=12;
+    let mode='lin';
+    const cfg={lin:{f:x=>2*x-1,c:3,L:5,xmin:1,xmax:5,ymin:1,ymax:9,win:e=>e/2,winTxt:'δ = ε/2'},
+               quad:{f:x=>x*x,c:3,L:9,xmin:1,xmax:5,ymin:1,ymax:25,win:e=>Math.min(1,e/7),winTxt:'δ = min(1, ε/7)'}};
+    const X=(x,g)=>mL+(x-g.xmin)/(g.xmax-g.xmin)*(W-mL-8);
+    const Y=(y,g)=>H-mB-(y-g.ymin)/(g.ymax-g.ymin)*(H-mB-mT);
+    function draw(){
+      const g=cfg[mode],f=g.f;
+      const eps=+$('#epEin').value, delta=+$('#epDin').value;
+      // numeric check: worst error inside the punctured delta band
+      let maxErr=0;
+      for(let i=0;i<=400;i++){const x=g.c-delta+2*delta*i/400;if(Math.abs(x-g.c)<1e-12)continue;maxErr=Math.max(maxErr,Math.abs(f(x)-g.L));}
+      const win=maxErr<=eps+1e-9;
+      ctx.clearRect(0,0,W,H);
+      // epsilon band (green)
+      ctx.fillStyle='rgba(103,197,135,.18)';
+      ctx.fillRect(mL,Y(g.L+eps,g),W-mL-8,Y(g.L-eps,g)-Y(g.L+eps,g));
+      // delta band (blue), punctured at c
+      ctx.fillStyle='rgba(143,176,255,.16)';
+      ctx.fillRect(X(g.c-delta,g),mT,X(g.c,g)-X(g.c-delta,g),H-mB-mT);
+      ctx.fillRect(X(g.c,g),mT,X(g.c+delta,g)-X(g.c,g),H-mB-mT);
+      // grid + axes
+      ctx.strokeStyle='#20242d';ctx.lineWidth=1;
+      for(let x=Math.ceil(g.xmin);x<=g.xmax;x++){ctx.beginPath();ctx.moveTo(X(x,g),mT);ctx.lineTo(X(x,g),H-mB);ctx.stroke();}
+      ctx.strokeStyle='#3c4250';ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.moveTo(mL,Y(g.L,g));ctx.lineTo(W-8,Y(g.L,g));ctx.stroke();
+      ctx.strokeStyle='#67c587';ctx.setLineDash([6,4]);ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.moveTo(mL,Y(g.L+eps,g));ctx.lineTo(W-8,Y(g.L+eps,g));
+      ctx.moveTo(mL,Y(g.L-eps,g));ctx.lineTo(W-8,Y(g.L-eps,g));ctx.stroke();ctx.setLineDash([]);
+      ctx.strokeStyle='#8fb0ff';ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.moveTo(X(g.c-delta,g),mT);ctx.lineTo(X(g.c-delta,g),H-mB);
+      ctx.moveTo(X(g.c+delta,g),mT);ctx.lineTo(X(g.c+delta,g),H-mB);ctx.stroke();
+      // function
+      ctx.strokeStyle='#5f8af7';ctx.lineWidth=2.4;ctx.beginPath();
+      for(let px=mL;px<=W-8;px++){const x=g.xmin+(px-mL)/(W-mL-8)*(g.xmax-g.xmin),y=f(x);
+        px===mL?ctx.moveTo(px,Y(y,g)):ctx.lineTo(px,Y(y,g));}
+      ctx.stroke();
+      // point (c,L)
+      ctx.fillStyle='#e8d27a';ctx.beginPath();ctx.arc(X(g.c,g),Y(g.L,g),4.5,0,7);ctx.fill();
+      ctx.fillStyle='#6f7683';ctx.font='10px sans-serif';ctx.textAlign='left';
+      ctx.fillText('y = L',mL+4,Y(g.L,g)-4);
+      ctx.fillText('x = c',X(g.c,g)+4,H-8);
+      $('#epE').textContent=(+eps).toFixed(2);$('#epD').textContent=(+delta).toFixed(2);
+      $('#epOut').innerHTML= win
+        ? `<span style="color:#8fd4a8">✔ δ works — every x in the blue band maps inside green.</span><br>max |f(x) − L| in band = ${maxErr.toFixed(3)} ≤ ε = ${(+eps).toFixed(2)}`
+        : `<span style="color:#f0a8a0">✘ δ too wide — blue edges escape the green band.</span><br>max |f(x) − L| in band = ${maxErr.toFixed(3)} &gt; ε = ${(+eps).toFixed(2)} · shrink δ`;
+    }
+    $('#epMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.m;[...$('#epMode').children].forEach(c=>c.classList.remove('on'));b.classList.add('on');draw();});
+    $('#epEin').addEventListener('input',draw);
+    $('#epDin').addEventListener('input',draw);
+    $('#epChal').onclick=()=>{const e=+(0.2+Math.random()*1.3).toFixed(2);$('#epEin').value=e;$('#epDin').value=1.5;draw();};
+    $('#epShow').onclick=()=>{const g=cfg[mode];$('#epDin').value=g.win(+$('#epEin').value);draw();
+      $('#epOut').innerHTML+=`<br><span class="muted">Scratch trick: ${g.winTxt} (for x² we first bounded |x+3| &lt; 7).</span>`;};
+    draw();
+  }
+};
+
+/* ---- W8: Asymptote zoo (§2.6) ---- */
+WIDGETS.asymp={
+  mount(host){
+    host.innerHTML=`
+      <h4>Asymptote Lab <span class="zh">渐近线实验室</span></h4>
+      <div class="wsub">Pick a function, then zoom out to watch the tails behave. Red dashed = vertical asymptotes, green dashed = horizontal/oblique guides, open ring = removable hole.</div>
+      <div class="wrow">
+        <canvas id="asC" width="360" height="300"></canvas>
+        <div class="wcontrols">
+          <div class="wbtns" id="asPick">
+            <button data-k="rat" class="on">(2x²−3x+1)/(x²−4)</button>
+            <button data-k="hole">(x²−1)/(x−1) — hole</button>
+            <button data-k="sx">sin x / x — crosses HA</button>
+            <button data-k="sl">(x²+2x−1)/(x+1) — slant</button>
+          </div>
+          <div class="wbtns"><button id="asZoom" class="on">Near view</button><button id="asFar">Zoom out (end behavior)</button></div>
+          <div class="readout" id="asOut"></div>
+        </div>
+      </div>`;
+    const $=s=>host.querySelector(s);
+    const cv=$('#asC'),ctx=cv.getContext('2d'),W=360,H=300,mL=34,mB=22,mT=10;
+    const funcs={
+      rat:{fn:x=>(2*x*x-3*x+1)/(x*x-4),near:[-6,6,-8,8],far:[-30,30,-3,6],ha:[[2,'y = 2']],va:[[-2,'x = −2'],[2,'x = 2']],holes:[],guide:null,
+        out:'<b>HA y = 2</b> (equal degrees → leading ratio 2/1). <b>VAs x = ±2</b>: denominator zero while numerator is 3 and 15 (nonzero). Zoom out — both tails flatten onto y = 2.'},
+      hole:{fn:x=>x===1?NaN:(x*x-1)/(x-1),near:[-3,6,-3,8],far:[-30,30,-33,33],ha:[],va:[],holes:[[1,2]],guide:[x=>x+1,'y = x + 1 (continuous extension)'],
+        out:'At x = 1 it is 0/0 — but the limit is <b>2</b>. That is a <b>removable hole</b> (open ring), NOT an asymptote. Cancel to x + 1 for x ≠ 1.'},
+      sx:{fn:x=>Math.abs(x)<1e-9?1:Math.sin(x)/x,near:[-15,15,-.6,1.2],far:[-60,60,-.4,1.2],ha:[[0,'y = 0']],va:[],holes:[],guide:null,
+        out:'<b>HA y = 0</b> — and the graph CROSSES it at ±π, ±2π, … A horizontal asymptote is only an end-behavior promise; crossings in the middle are allowed.'},
+      sl:{fn:x=>(x*x+2*x-1)/(x+1),near:[-8,8,-10,10],far:[-30,30,-34,34],ha:[],va:[[-1,'x = −1']],holes:[],guide:[x=>x+1,'y = x + 1 (oblique)'],
+        out:'Numerator degree is one higher → long division gives x + 1 − 2/(x+1). The <b>oblique asymptote is y = x + 1</b>; the gap −2/(x+1) shrinks to 0. Zoom out to see curve and line merge.'}
+    };
+    let k='rat',far=false;
+    function draw(){
+      const d=funcs[k],v=far?d.far:d.near,xmin=v[0],xmax=v[1],ymin=v[2],ymax=v[3];
+      const X=x=>mL+(x-xmin)/(xmax-xmin)*(W-mL-8);
+      const Y=y=>H-mB-(y-ymin)/(ymax-ymin)*(H-mB-mT);
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle='#20242d';ctx.lineWidth=1;
+      for(let px=mL;px<=W-8;px+=26){ctx.beginPath();ctx.moveTo(px,mT);ctx.lineTo(px,H-mB);ctx.stroke();}
+      for(let py=mT;py<=H-mB;py+=26){ctx.beginPath();ctx.moveTo(mL,py);ctx.lineTo(W-8,py);ctx.stroke();}
+      ctx.strokeStyle='#3c4250';ctx.lineWidth=1.3;
+      ctx.beginPath();ctx.moveTo(mL,Y(0));ctx.lineTo(W-8,Y(0));ctx.moveTo(X(0),mT);ctx.lineTo(X(0),H-mB);ctx.stroke();
+      // HA
+      ctx.strokeStyle='#67c587';ctx.lineWidth=1.5;ctx.setLineDash([7,4]);
+      d.ha.forEach(([yy,t])=>{ctx.beginPath();ctx.moveTo(mL,Y(yy));ctx.lineTo(W-8,Y(yy));ctx.stroke();
+        ctx.fillStyle='#67c587';ctx.font='11px sans-serif';ctx.textAlign='right';ctx.fillText(t,W-10,Y(yy)-4);});
+      // oblique / extension guide
+      if(d.guide){const[gn,gt]=d.guide;ctx.strokeStyle='#67c587';ctx.lineWidth=1.5;ctx.beginPath();
+        ctx.moveTo(mL,Y(gn(xmin)));ctx.lineTo(W-8,Y(gn(xmax)));ctx.stroke();
+        ctx.fillStyle='#67c587';ctx.font='11px sans-serif';ctx.textAlign='left';ctx.fillText(gt,mL+4,mT+12);}
+      ctx.setLineDash([]);
+      // VA
+      ctx.strokeStyle='#e0817a';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+      d.va.forEach(([xx,t])=>{ctx.beginPath();ctx.moveTo(X(xx),mT);ctx.lineTo(X(xx),H-mB);ctx.stroke();
+        ctx.fillStyle='#e0817a';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText(t,X(xx),H-6);});
+      ctx.setLineDash([]);
+      // curve
+      ctx.strokeStyle='#5f8af7';ctx.lineWidth=2.2;ctx.beginPath();
+      for(let px=mL;px<=W-8;px+=0.6){const x=xmin+(px-mL)/(W-mL-8)*(xmax-xmin),y=d.fn(x);
+        if(!isFinite(y)||Y(y)<mT-40||Y(y)>H-mB+40){ctx.moveTo(px,Y(isFinite(y)?y:ymin));continue;}
+        ctx.lineTo(px,Y(y));}
+      ctx.stroke();
+      // holes
+      d.holes.forEach(([hx,hy])=>{ctx.beginPath();ctx.arc(X(hx),Y(hy),5,0,7);ctx.fillStyle='#14161b';ctx.fill();ctx.strokeStyle='#8fb0ff';ctx.lineWidth=2;ctx.stroke();
+        ctx.fillStyle='#a0a8b4';ctx.font='11px sans-serif';ctx.textAlign='left';ctx.fillText('hole ('+hx+', '+hy+')',X(hx)+9,Y(hy)-7);});
+      $('#asOut').innerHTML=d.out;
+    }
+    $('#asPick').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;k=b.dataset.k;[...$('#asPick').children].forEach(c=>c.classList.remove('on'));b.classList.add('on');draw();});
+    $('#asZoom').onclick=()=>{far=false;$('#asZoom').classList.add('on');$('#asFar').classList.remove('on');draw();};
+    $('#asFar').onclick=()=>{far=true;$('#asFar').classList.add('on');$('#asZoom').classList.remove('on');draw();};
+    draw();
+  }
+};
+
 /* ============================================================
    Render: Learn
 ============================================================ */
@@ -426,23 +662,57 @@ function secMastery(li){
   });
   return tot?ok/tot:null;
 }
+function chTabsHtml(){
+  return CHAPTERS.map(c=>`<button type="button" data-ch="${c.n}" class="${c.n===S.ch?'on':''}">${c.short}</button>`).join('');
+}
+function bindChTabs(container,onswitch){
+  container.querySelectorAll('button[data-ch]').forEach(b=>b.onclick=()=>onswitch(+b.dataset.ch));
+}
+function switchChapter(n){
+  if(n===S.ch)return;
+  S.ch=n;
+  const[f]=chRange(n);
+  if(S.sec<f||S.sec>=chRange(n)[1]){S.sec=f;S.step=0;}
+  saveStore();
+  renderAll();updateChrome();
+  const tab=(document.querySelector('#nav button.active')||{}).dataset&&document.querySelector('#nav button.active').dataset.tab;
+  if(tab==='hw')renderHWList();
+  if(tab==='quiz')renderQuizHome();
+  if(tab==='words')renderWordsHome();
+  if(tab==='mastery')renderMastery();
+}
+function updateChrome(){
+  const c=CHAPTERS[S.ch-1]||CHAPTERS[0];
+  const brand=$('#brand');
+  if(brand)brand.innerHTML=`MA119 · ${c.short.replace(/^Ch\.\d\s·\s/,'')} <small>Mathematics for Health Sciences · ${c.week}</small>`;
+  const rh=$('#routeH4');if(rh)rh.textContent=c.week+"'s route";
+}
 function renderRail(){
   const list=$('#secList');list.innerHTML='';
-  LESSONS.forEach((s,i)=>{
-    const b=el('button','secitem'+(i===S.sec?' active':'')+(S.secDone[i]?' done':''));
-    const m=secMastery(i);
-    const tag=m==null?(S.secDone[i]?'<span class="tag">✓</span>':'<span class="tag"></span>')
+  secIndices(S.ch).forEach(gi=>{
+    const s=LESSONS[gi];
+    const b=el('button','secitem'+(gi===S.sec?' active':'')+(S.secDone[gi]?' done':''));
+    const m=secMastery(gi);
+    const tag=m==null?(S.secDone[gi]?'<span class="tag">✓</span>':'<span class="tag"></span>')
       :`<span class="tag pct ${m>=.8?'hi':m>=.5?'mid':'lo'}">${Math.round(m*100)}%</span>`;
     b.innerHTML+=`<span class="dot"></span><span>${s.title}</span>${tag}`;
-    b.onclick=()=>{S.sec=i;S.step=0;saveStore();renderAll();};
+    b.onclick=()=>{S.sec=gi;S.step=0;saveStore();renderAll();};
     list.appendChild(b);
   });
+  const sw=$('#chSwitch');
+  if(sw){sw.innerHTML=chTabsHtml();bindChTabs(sw,switchChapter);}
   const strip=$('#sectStrip');
   if(strip){
     strip.innerHTML='';
-    LESSONS.forEach((s,i)=>{
-      const b=el('button',i===S.sec?'on':'',s.title);
-      b.onclick=()=>{S.sec=i;S.step=0;saveStore();renderAll();};
+    CHAPTERS.forEach(c=>{
+      const b=el('button','chtab'+(c.n===S.ch?' on':''),'Ch.'+c.n);
+      b.title=c.name+' · '+c.week;
+      b.onclick=()=>switchChapter(c.n);
+      strip.appendChild(b);
+    });
+    secIndices(S.ch).forEach(gi=>{
+      const b=el('button',gi===S.sec?'on':'',LESSONS[gi].title);
+      b.onclick=()=>{S.sec=gi;S.step=0;saveStore();renderAll();};
       strip.appendChild(b);
     });
   }
@@ -452,7 +722,7 @@ function renderLesson(){
   const L=LESSONS[S.sec];
   S.step=Math.max(0,Math.min(S.step,L.steps.length-1));
   for(let i=0;i<=S.step;i++){try{addStepNode(L.steps[i],i===S.step)}catch(e){console.warn('step render failed',i,e)}}
-  $('#progressChip').textContent=`${L.title.split(' ')[0]} · step ${S.step+1}/${L.steps.length}`;
+  $('#progressChip').textContent=`Ch.${S.ch} · ${L.title.split(' · ')[0]} · step ${S.step+1}/${L.steps.length}`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{conv.scrollTop=conv.scrollHeight}));
 }
 function addStepNode(st,interactive){
@@ -478,7 +748,7 @@ function addStepNode(st,interactive){
   }else if(st.t==='widget'){
     if(st.html) feed.appendChild(teacherCard(st.html));
     const w=el('div','widget');feed.appendChild(w);
-    requestAnimationFrame(()=>WIDGETS[st.id].mount(w));
+    requestAnimationFrame(()=>{if(w.isConnected)WIDGETS[st.id].mount(w);});
     if(interactive){
       const row=el('div','continue-row');
       const b=el('button','btn','I tried it — Continue →');
@@ -488,13 +758,13 @@ function addStepNode(st,interactive){
   }else if(st.t==='recap'){
     const c=el('div','recap');
     c.innerHTML=`<h3>${st.title} · Summary</h3>`;
-    const u=el('ul');st.items.forEach(it=>u.appendChild(el('li','',it)));c.appendChild(u);
+    if(st.items&&st.items.length){const u=el('ul');st.items.forEach(it=>u.appendChild(el('li','',it)));c.appendChild(u);}
     if(st.mn)c.appendChild(el('div','mn',`<b>Memory hook 记忆口诀:</b> ${st.mn}`));
     feed.appendChild(c);
     if(interactive){
       const row=el('div','continue-row');
-      const last=S.sec===LESSONS.length-1;
-      const b=el('button','btn', last?'Finish section 🎉':'Continue to next section →');
+      const last=S.sec===chRange(S.ch)[1]-1;
+      const b=el('button','btn', last?'Finish chapter 🎉':'Continue to next section →');
       b.onclick=()=>{
         S.secDone[S.sec]=true;
         if(!last){S.sec++;S.step=0;}
@@ -623,15 +893,18 @@ function advanceLesson(){
 ============================================================ */
 function renderHWList(){
   const wrap=$('#hwList');wrap.innerHTML='';
-  const intro=el('div','',`<h2 style="font-size:18px;margin-bottom:4px">Chapter 1 Homework <span style="color:var(--faint);font-size:13px;font-weight:400">— 10 problems · I will guide, not solve for you</span></h2>
+  const sw=el('div','chswitch');sw.innerHTML=chTabsHtml();bindChTabs(sw,switchChapter);wrap.appendChild(sw);
+  const c=CHAPTERS[S.ch-1];
+  const list=HW.filter(h=>h.id.indexOf('c2')===0?(S.ch===2):(S.ch===1));
+  const intro=el('div','',`<h2 style="font-size:18px;margin-bottom:4px">${c.name} Homework <span style="color:var(--faint);font-size:13px;font-weight:400">— ${list.length} problems · I will guide, not solve for you</span></h2>
     <p class="muted" style="font-size:13.5px;margin-bottom:10px">Rule of our sessions: I ask one small question at a time. You commit to an answer, then we check. Full walkthroughs only appear after you have tried — that is how understanding sticks.</p>`);
   wrap.appendChild(intro);
-  HW.forEach(h=>{
+  list.forEach(h=>{
     const done=S.hw[h.id]&&S.hw[h.id].finished;
-    const c=el('button','hwcard'+(done?' done':''));
-    c.innerHTML=`<div class="top"><span class="hwbadge ${h.badge.includes('Bonus')?'bonus':''}">${h.badge}</span><span class="state">${done?'✓ worked through':'Start →'}</span></div><div class="stmt">${h.stmt}</div>`;
-    c.onclick=()=>renderHWSession(h);
-    wrap.appendChild(c);
+    const card=el('button','hwcard'+(done?' done':''));
+    card.innerHTML=`<div class="top"><span class="hwbadge ${h.badge.includes('Bonus')?'bonus':''}">${h.badge}</span><span class="state">${done?'✓ worked through':'Start →'}</span></div><div class="stmt">${h.stmt}</div>`;
+    card.onclick=()=>renderHWSession(h);
+    wrap.appendChild(card);
   });
 }
 function renderHWSession(h){
@@ -657,7 +930,7 @@ function renderHWSession(h){
         const b=el('button','',c.txt);
         b.onclick=()=>{[...ch.children].forEach(x=>x.disabled=true);b.classList.add(c.ok?'correct':'wrong');
           if(c.ok){if(!firstTry){allFirst=false;wrongSteps.push(idx);}fb.className='fb show ok';fb.textContent=st.ok||'Correct.';[...ch.children].forEach(x=>x.disabled=true);
-            setTimeout(nextBtn('Next →'),250);}
+            setTimeout(()=>nextBtn('Next →'),250);}
           else{firstTry=false;fb.className='fb show no';fb.textContent=st.fb||'Think again — try another choice.';}};
         ch.appendChild(b);});
       body.append(ch,fb);box.appendChild(node);
@@ -706,25 +979,32 @@ function buildReviewSet(){
   items.forEach(m=>{const s=QUIZ.find(x=>x.id===m.a);if(s&&s.qs[m.b]){qs.push(s.qs[m.b]);topic.push(s.topic[m.b]);src.push({setId:m.a,qi:m.b});}});
   return qs.length?{id:'review',name:'Review Drill',qs,topic,src}:null;
 }
+const QUIZ_CH_COPY={
+  1:'domains, composition, transformations, trig, modeling',
+  2:'rates & tangents, limit laws, ε–δ, one-sided limits, continuity, asymptotes'
+};
+function quizSetCh(set){return parseInt(set.id.replace('set',''),10)<=5?1:2;}
 function renderQuizHome(){
   const a=$('#quizArea');a.innerHTML='';
-  a.appendChild(el('div','',`<h2 style="font-size:18px;margin-bottom:4px">Chapter 1 Quiz</h2>
-    <p class="muted" style="font-size:13.5px">Exam-style: fixed question order, one question per screen, <b>no feedback until you submit</b>. You may revisit earlier questions before submitting. Afterward we review every miss together, and your mastery map updates.</p>`));
+  const sw=el('div','chswitch');sw.innerHTML=chTabsHtml();bindChTabs(sw,switchChapter);a.appendChild(sw);
+  const c=CHAPTERS[S.ch-1];
+  a.appendChild(el('div','',`<h2 style="font-size:18px;margin-bottom:4px">${c.name} Quiz</h2>
+    <p class="muted" style="font-size:13.5px">Exam-style: fixed question order, one question per screen, <b>no feedback until you submit</b>. You may revisit earlier questions before submitting. Afterward we review every miss together, and your mastery map updates. Topics: ${QUIZ_CH_COPY[S.ch]}.</p>`));
   const rv=buildReviewSet();
   if(rv){
-    const c=el('button','hwcard');
-    c.innerHTML=`<div class="top"><span class="hwbadge bonus">Review Drill 错题重练</span><span class="state">${rv.qs.length} missed · Start →</span></div>
-      <div class="stmt">Re-drill the quiz questions you have missed, still in fixed order. Answer correctly to clear them from your Review notebook.</div>`;
-    c.onclick=()=>startQuiz(rv);
-    a.appendChild(c);
+    const c2=el('button','hwcard');
+    c2.innerHTML=`<div class="top"><span class="hwbadge bonus">Review Drill 错题重练</span><span class="state">${rv.qs.length} missed · Start →</span></div>
+      <div class="stmt">Re-drill the quiz questions you have missed (both chapters), still in fixed order. Answer correctly to clear them from your Review notebook.</div>`;
+    c2.onclick=()=>startQuiz(rv);
+    a.appendChild(c2);
   }
-  QUIZ.forEach(set=>{
-    const c=el('button','hwcard');
+  QUIZ.filter(set=>quizSetCh(set)===S.ch).forEach(set=>{
+    const card=el('button','hwcard');
     const best=S.attempts.filter(x=>x.setId===set.id).map(x=>x.score);
-    c.innerHTML=`<div class="top"><span class="hwbadge">${set.name}</span><span class="state">${best.length?'best: '+Math.max(...best)+'/'+set.qs.length+' — retake ↻':'Start →'}</span></div>
-      <div class="stmt">${set.qs.length} questions · domains, composition, transformations, trig, modeling</div>`;
-    c.onclick=()=>startQuiz(set);
-    a.appendChild(c);
+    card.innerHTML=`<div class="top"><span class="hwbadge">${set.name}</span><span class="state">${best.length?'best: '+Math.max(...best)+'/'+set.qs.length+' — retake ↻':'Start →'}</span></div>
+      <div class="stmt">${set.qs.length} questions · ${QUIZ_CH_COPY[S.ch]}</div>`;
+    card.onclick=()=>startQuiz(set);
+    a.appendChild(card);
   });
 }
 function startQuiz(set){
@@ -832,19 +1112,26 @@ function renderMastery(){
   const prac=el('div','mcard');
   prac.innerHTML='<h3>Guided practice accuracy <span style="color:var(--faint);font-weight:400;font-size:12px">— Learn & Homework, first-try results</span></h3>';
   let anyPrac=false;
-  [['1.1',0],['1.2',1],['1.3',2],['1.4',3]].forEach(([sec,li])=>{
-    let ok=0,tot=0;
-    LESSONS[li].steps.forEach((st,si)=>{
-      const r=S.learn['s'+li+'_'+si];
-      if((st.t==='ask'||st.t==='input')&&r!==undefined){tot++;ok+=r;}
+  CHAPTERS.forEach(c=>{
+    const head=el('div','mchap-head','Ch.'+c.n+' · '+c.name.replace(/^Chapter \d+\s·\s/,''));
+    prac.appendChild(head);
+    secIndices(c.n).forEach(li=>{
+      let ok=0,tot=0;
+      LESSONS[li].steps.forEach((st,si)=>{
+        const r=S.learn['s'+li+'_'+si];
+        if((st.t==='ask'||st.t==='input')&&r!==undefined){tot++;ok+=r;}
+      });
+      const mm=LESSONS[li].title.match(/§(\d\.\d)/);
+      const sec=mm?mm[1]:null;
+      const hw=sec?S.hwsec[sec]:null;
+      if(hw){ok+=hw[0];tot+=hw[1];}
+      if(tot)anyPrac=true;
+      const lab=sec?('§'+sec):(li===4?'Word Eq':'Warm-up');
+      const pct=tot?Math.round(ok/tot*100):null;
+      const row=el('div','mbar-row');
+      row.innerHTML=`<span class="lbl">${lab} guided</span><span class="mtrack"><i style="width:${pct==null?0:pct}%;background:${pct==null?'#2c3038':pct>=80?'var(--good)':pct>=55?'var(--acc2)':'var(--bad)'}"></i></span><span class="val">${pct==null?'— not yet':pct+'% · '+tot+' tries'}</span>`;
+      prac.appendChild(row);
     });
-    const hw=S.hwsec[sec];
-    if(hw){ok+=hw[0];tot+=hw[1];}
-    if(tot)anyPrac=true;
-    const pct=tot?Math.round(ok/tot*100):null;
-    const row=el('div','mbar-row');
-    row.innerHTML=`<span class="lbl">§${sec} guided</span><span class="mtrack"><i style="width:${pct==null?0:pct}%;background:${pct==null?'#2c3038':pct>=80?'var(--good)':pct>=55?'var(--acc2)':'var(--bad)'}"></i></span><span class="val">${pct==null?'— not yet':pct+'% · '+tot+' tries'}</span>`;
-    prac.appendChild(row);
   });
   if(!anyPrac)prac.innerHTML+='<p class="muted" style="font-size:13.5px">Answer Learn or Homework questions and your first-try accuracy shows up here.</p>';
   a.appendChild(prac);
@@ -951,34 +1238,38 @@ function renderReview(){
 /* ============================================================
    Render: Words (flashcards 闪卡)
 ============================================================ */
-let wc=null; // {deck:[indices], pos, flipped, agains}
-function knownCount(){return WORDS.filter(w=>(S.cards.known[w.en]||0)>0).length;}
+let wc=null; // {deck:[indices], idxs:[chapter indices], pos, flipped, agains}
+function chWordIdxs(){const p=String(S.ch)+'.';return WORDS.map((_,i)=>i).filter(i=>WORDS[i].sec.indexOf(p)===0);}
+function knownCountIdxs(idxs){return idxs.filter(i=>(S.cards.known[WORDS[i].en]||0)>0).length;}
 function renderWordsHome(){
   wc=null;
   const a=$('#wordsArea');a.innerHTML='';
-  const kc=knownCount(), total=WORDS.length;
-  a.appendChild(el('div','',`<h2 style="font-size:18px;margin-bottom:4px">Words · 关键术语闪卡</h2>
+  const sw=el('div','chswitch');sw.innerHTML=chTabsHtml();bindChTabs(sw,switchChapter);a.appendChild(sw);
+  const idxs=chWordIdxs();
+  const kc=knownCountIdxs(idxs), total=idxs.length;
+  const c=CHAPTERS[S.ch-1];
+  a.appendChild(el('div','',`<h2 style="font-size:18px;margin-bottom:4px">${c.name} · Words <span style="color:var(--faint);font-size:13px;font-weight:400">— 关键术语闪卡</span></h2>
     <p class="muted" style="font-size:13.5px;margin-bottom:10px">Flip a card, judge yourself honestly. Cards you mark <b>Again</b> come back later in the same round; <b>Know</b> is remembered across sessions. Keys: <b>Space</b> flip · <b>1</b> again · <b>2</b> know.</p>`));
   const card=el('div','mcard');
   card.innerHTML=`<h3>Your term bank <span style="color:var(--faint);font-weight:400;font-size:12px">— ${kc} / ${total} marked known</span></h3>
     <div class="wprogress"><i style="width:${Math.round(kc/total*100)}%"></i></div>`;
   const row=el('div','continue-row');row.style.justifyContent='flex-start';row.style.gap='10px';
   const all=el('button','btn',`Study all ${total}`);
-  all.onclick=()=>{wc={deck:WORDS.map((_,i)=>i),pos:0,flipped:false,agains:0,total};renderWordCard();};
+  all.onclick=()=>{wc={deck:idxs.slice(),idxs,pos:0,flipped:false,agains:0,total};renderWordCard();};
   const fresh=el('button','btn ghost',`New only (${total-kc})`);
-  fresh.onclick=()=>{const d=WORDS.map((_,i)=>i).filter(i=>!(S.cards.known[WORDS[i].en]>0));wc={deck:d,pos:0,flipped:false,agains:0,total:d.length};renderWordCard();};
+  fresh.onclick=()=>{const d=idxs.filter(i=>!(S.cards.known[WORDS[i].en]>0));wc={deck:d,idxs,pos:0,flipped:false,agains:0,total:d.length};renderWordCard();};
   row.append(all,fresh);card.appendChild(row);a.appendChild(card);
 }
 function renderWordCard(){
   const a=$('#wordsArea');a.innerHTML='';
   if(wc.pos>=wc.deck.length){
     const card=el('div','mcard','');
-    card.innerHTML=`<h3>Round complete 🎉</h3><p style="font-size:14px">Cards reviewed: <b>${wc.total}</b> · extra repeats from "Again": <b>${wc.agains}</b> · terms now known: <b>${knownCount()} / ${WORDS.length}</b></p>
+    card.innerHTML=`<h3>Round complete 🎉</h3><p style="font-size:14px">Cards reviewed: <b>${wc.total}</b> · extra repeats from "Again": <b>${wc.agains}</b> · terms now known: <b>${knownCountIdxs(wc.idxs)} / ${wc.idxs.length}</b></p>
       <p class="muted" style="font-size:13px">A low repeat count means the terms are sticking. Come back tomorrow and run "New only" to keep them fresh.</p>`;
     const row=el('div','continue-row');row.style.justifyContent='flex-start';row.style.gap='10px';
     const back=el('button','btn','Back to word bank');back.onclick=renderWordsHome;
     const again=el('button','btn ghost','Restart round ↺');
-    again.onclick=()=>{wc={deck:WORDS.map((_,i)=>i),pos:0,flipped:false,agains:0,total:WORDS.length};renderWordCard();};
+    again.onclick=()=>{wc={deck:wc.idxs.slice(),idxs:wc.idxs,pos:0,flipped:false,agains:0,total:wc.idxs.length};renderWordCard();};
     row.append(back,again);card.appendChild(row);a.appendChild(card);return;
   }
   const w=WORDS[wc.deck[wc.pos]];
@@ -1065,14 +1356,14 @@ applyTheme();
 
 const ONBOARD=[
   {title:'Welcome to MA119 👋',
-   p:"I'm Ms. Lin, your guide for Chapter 1 — Functions. I'll ask one small question at a time and let you do the thinking. Before we start, two quick questions so I can match your pace.",
+   p:"I'm Ms. Lin, your guide for Chapter 1 — Functions and Chapter 2 — Limits and Continuity. I'll ask one small question at a time and let you do the thinking. Before we start, two quick questions so I can match your pace.",
    picks:null},
   {key:'goal',title:'What brings you here today?',
    p:'You can switch modes any time from the toolbar.',
    picks:[
-     {v:'learn',t:'Learn from scratch',s:'Step through §1.1–1.4 with guidance'},
+     {v:'learn',t:'Learn from scratch',s:'Step through Chapters 1–2 with guidance'},
      {v:'review',t:'Quick review',s:'I have seen this before'},
-     {v:'hw',t:'Homework help',s:'Guide me through the 10 problems'},
+     {v:'hw',t:'Homework help',s:'Guide me through the problems'},
      {v:'quiz',t:'Practice quiz',s:'Exam-style sets with analysis'}]},
   {key:'level',title:'How is your math background?',
    p:'This adjusts how much background linking I do. You can change it anytime by resetting.',
@@ -1108,10 +1399,10 @@ function renderOnboard(){
     card.appendChild(pk);
   }
 }
-function renderAll(){renderRail();renderLesson();}
+function renderAll(){renderRail();renderLesson();updateChrome();}
 
 if(S.onboarded){$('#onboard').classList.add('hidden');renderAll();}
-else{renderOnboard();}
+else{updateChrome();renderOnboard();}
 
 /* Service worker (offline cache) */
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
