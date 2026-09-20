@@ -674,7 +674,7 @@ function switchChapter(n){
   const[f]=chRange(n);
   if(S.sec<f||S.sec>=chRange(n)[1]){S.sec=f;S.step=0;}
   saveStore();
-  renderAll();updateChrome();
+  renderAll();
   const tab=(document.querySelector('#nav button.active')||{}).dataset&&document.querySelector('#nav button.active').dataset.tab;
   if(tab==='hw')renderHWList();
   if(tab==='quiz')renderQuizHome();

@@ -1,4 +1,4 @@
-const C='ma119-v5';
+const C='ma119-v6';
 // Versioned static assets: cache-first, effectively immutable between SW versions
 const ASSETS=['./','./index.html','./manifest.json','./icon.svg',
   './css/styles.css','./js/store.js','./js/data.js','./js/app.js'];
