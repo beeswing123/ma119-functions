@@ -1,5 +1,7 @@
-const C='ma119-v3';
-const ASSETS=['./','./index.html','./manifest.json','./icon.svg'];
+const C='ma119-v4';
+// Versioned static assets: cache-first, effectively immutable between SW versions
+const ASSETS=['./','./index.html','./manifest.json','./icon.svg',
+  './css/styles.css','./js/store.js','./js/data.js','./js/app.js'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
@@ -20,9 +22,10 @@ self.addEventListener('fetch',e=>{
       }).catch(()=>caches.match('./index.html'))
     );
   }else{
-    // static assets: cache-first
+    // css/js/manifest/icon: cache-first (bumped together with C on every deploy)
     e.respondWith(
       caches.match(e.request,{ignoreSearch:true}).then(r=>r||fetch(e.request).then(resp=>{
+        if(!resp.ok)return resp;
         const cp=resp.clone();
         caches.open(C).then(c=>c.put(e.request,cp));
         return resp;
