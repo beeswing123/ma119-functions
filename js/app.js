@@ -627,6 +627,157 @@ WIDGETS.asymp={
   }
 };
 
+/* ---- W9: the derivative as a function (§3.2) ---- */
+WIDGETS.dfunc={
+  mount(host){
+    host.innerHTML=`
+      <h4>The Derivative Function <span class="zh">导函数图像</span></h4>
+      <div class="wsub">Blue = f(x); green dashed = f′(x), its slope-function. Drag the yellow point along f and its tangent travels with it. The tangent goes flat exactly where the green curve crosses the axis.</div>
+      <div class="wrow">
+        <canvas id="dfC" width="360" height="300" style="touch-action:none"></canvas>
+        <div class="wcontrols">
+          <div class="wbtns" id="dfMode">
+            <button data-k="sq" class="on">f(x) = x²</button>
+            <button data-k="cu">f(x) = x³ − 3x</button>
+            <button data-k="sn">f(x) = sin x</button>
+          </div>
+          <div class="readout" id="dfOut"></div>
+          <p class="muted" style="font-size:12.5px">Drag the yellow dot on the blue curve. f increases where f′ &gt; 0; peaks and valleys sit on f′ = 0.</p>
+        </div>
+      </div>`;
+    const $=s=>host.querySelector(s);
+    const cv=$('#dfC'),ctx=cv.getContext('2d'),W=360,H=300,mL=36,mB=24,mT=12;
+    const cfg={
+      sq:{f:x=>x*x,       fp:x=>2*x,        v:[-3,3,-7,9],    fTxt:'x²',     fpTxt:'2x'},
+      cu:{f:x=>x*x*x-3*x, fp:x=>3*x*x-3,    v:[-2.3,2.3,-5,13], fTxt:'x³−3x', fpTxt:'3x²−3'},
+      sn:{f:x=>Math.sin(x),fp:x=>Math.cos(x),v:[-6.6,6.6,-1.75,1.75], fTxt:'sin x', fpTxt:'cos x'}
+    };
+    let k='sq',px0=null,drag=false;
+    const X=(x,d)=>mL+(x-d.v[0])/(d.v[1]-d.v[0])*(W-mL-8);
+    const Y=(y,d)=>H-mB-(y-d.v[2])/(d.v[3]-d.v[2])*(H-mB-mT);
+    const invX=(px,d)=>d.v[0]+(px-mL)/(W-mL-8)*(d.v[1]-d.v[0]);
+    function path(d,fn){
+      ctx.beginPath();
+      for(let px=mL;px<=W-8;px++){const x=invX(px,d),y=fn(x);
+        if(Y(y,d)<mT-40||Y(y,d)>H-mB+40){ctx.moveTo(px,Y(y,d));continue;}
+        px===mL?ctx.moveTo(px,Y(y,d)):ctx.lineTo(px,Y(y,d));}
+      ctx.stroke();
+    }
+    function draw(){
+      const d=cfg[k];
+      if(px0==null)px0=X(k==='sq'?1:(k==='cu'?-1.5:0),d);
+      let x=invX(px0,d);x=Math.max(d.v[0],Math.min(d.v[1],x));px0=X(x,d);
+      const m=d.fp(x),y0=d.f(x);
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle='#20242d';ctx.lineWidth=1;
+      for(let i=1;i<6;i++){const px=mL+(W-mL-8)*i/6;ctx.beginPath();ctx.moveTo(px,mT);ctx.lineTo(px,H-mB);ctx.stroke();}
+      for(let i=1;i<5;i++){const py=mT+(H-mB-mT)*i/5;ctx.beginPath();ctx.moveTo(mL,py);ctx.lineTo(W-8,py);ctx.stroke();}
+      // axes (through zero when visible)
+      ctx.strokeStyle='#3c4250';ctx.lineWidth=1.4;
+      if(d.v[2]<=0&&d.v[3]>=0){ctx.beginPath();ctx.moveTo(mL,Y(0,d));ctx.lineTo(W-8,Y(0,d));ctx.stroke();}
+      if(d.v[0]<=0&&d.v[1]>=0){ctx.beginPath();ctx.moveTo(X(0,d),mT);ctx.lineTo(X(0,d),H-mB);ctx.stroke();}
+      ctx.fillStyle='#6f7683';ctx.font='10px sans-serif';ctx.textAlign='left';
+      ctx.fillText('x',W-14,H-8);
+      // f' green dashed
+      ctx.strokeStyle='#67c587';ctx.lineWidth=1.8;ctx.setLineDash([6,4]);path(d,d.fp);ctx.setLineDash([]);
+      // tangent
+      ctx.strokeStyle='#e8d27a';ctx.lineWidth=1.6;ctx.beginPath();
+      ctx.moveTo(X(d.v[0],d),Y(y0+m*(d.v[0]-x),d));ctx.lineTo(X(d.v[1],d),Y(y0+m*(d.v[1]-x),d));ctx.stroke();
+      // f blue
+      ctx.strokeStyle='#5f8af7';ctx.lineWidth=2.4;path(d,d.f);
+      // point
+      ctx.fillStyle='#e8d27a';ctx.beginPath();ctx.arc(px0,Y(y0,d),5,0,7);ctx.fill();
+      ctx.fillStyle='#a0a8b4';ctx.font='12px sans-serif';ctx.textAlign='center';
+      ctx.fillText('('+x.toFixed(2)+', '+y0.toFixed(2)+')',px0,Math.max(mT+10,Y(y0,d)-10));
+      const dir=m>0.02?'<span style="color:#8fd4a8">f increasing ↗</span>':(m<-0.02?'<span style="color:#f0a8a0">f decreasing ↘</span>':'<span style="color:#e8d27a">f′ = 0 — horizontal tangent</span>');
+      $('#dfOut').innerHTML=`f(x) = <b>${d.fTxt}</b>, f′(x) = <b>${d.fpTxt}</b><br>
+        at x = <b>${x.toFixed(3)}</b>: f′(x) = <b>${m.toFixed(3)}</b> — tangent slope<br>${dir}`;
+    }
+    $('#dfMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;k=b.dataset.k;px0=null;
+      [...$('#dfMode').children].forEach(c=>c.classList.remove('on'));b.classList.add('on');draw();});
+    cv.addEventListener('pointerdown',e=>{drag=true;cv.setPointerCapture(e.pointerId);px0=e.offsetX;draw();});
+    cv.addEventListener('pointermove',e=>{if(!drag)return;px0=e.offsetX;draw();});
+    cv.addEventListener('pointerup',()=>{drag=false;});
+    cv.addEventListener('pointercancel',()=>{drag=false;});
+    draw();
+  }
+};
+
+/* ---- W10: linearization zoom lab (§3.9) ---- */
+WIDGETS.linz={
+  mount(host){
+    host.innerHTML=`
+      <h4>Linearization Zoom Lab <span class="zh">线性化缩放</span></h4>
+      <div class="wsub">Pick a function and an anchor, then zoom in. The blue curve collapses onto its green tangent L(x); the error readout dives toward zero. Differentiability you can SEE.</div>
+      <div class="wrow">
+        <canvas id="lzC" width="360" height="300"></canvas>
+        <div class="wcontrols">
+          <div class="wbtns" id="lzFn">
+            <button data-k="sqrt" class="on">f(x) = √x, a = 4</button>
+            <button data-k="sin">f(x) = sin x, a = 0</button>
+            <button data-k="sq">f(x) = x², a = 1</button>
+          </div>
+          <div class="wbtns" id="lzZm">
+            <button data-z="1" class="on">window ±1</button>
+            <button data-z="0.1">window ±0.1</button>
+            <button data-z="0.01">window ±0.01</button>
+          </div>
+          <div class="readout" id="lzOut"></div>
+          <p class="muted" style="font-size:12.5px">Green = tangent L(x); yellow = anchor. Each zoom shrinks the gap roughly 100× (quadratic in the window width).</p>
+        </div>
+      </div>`;
+    const $=s=>host.querySelector(s);
+    const cv=$('#lzC'),ctx=cv.getContext('2d'),W=360,H=300,mL=40,mB=26,mT=12;
+    const cfg={
+      sqrt:{f:x=>Math.sqrt(x),fp:x=>1/(2*Math.sqrt(x)),a:4,Ltxt:'2 + (x−4)/4',bend:'f″ < 0 → tangent ABOVE → overestimate'},
+      sin:{f:x=>Math.sin(x),fp:x=>Math.cos(x),a:0,Ltxt:'x',bend:'near 0: sin bends DOWN → overestimate'},
+      sq:{f:x=>x*x,fp:x=>2*x,a:1,Ltxt:'2x − 1',bend:'f″ > 0 → tangent BELOW → underestimate'}
+    };
+    let k='sqrt',z=1;
+    const fmt=n=>Math.abs(n)<0.001&&n!==0?n.toExponential(1):(+n.toFixed(5)).toString();
+    function draw(){
+      const d=cfg[k],a=d.a,xmin=a-z,xmax=a+z;
+      const L=x=>d.f(a)+d.fp(a)*(x-a);
+      let lo=Infinity,hi=-Infinity,maxErr=0;
+      for(let i=0;i<=200;i++){const x=xmin+(xmax-xmin)*i/200;const yf=d.f(x),yl=L(x);
+        lo=Math.min(lo,yf,yl);hi=Math.max(hi,yf,yl);maxErr=Math.max(maxErr,Math.abs(yf-yl));}
+      const pad=Math.max((hi-lo)*0.25,Math.abs(d.f(a))*0.02,1e-12);
+      const ymin=lo-pad,ymax=hi+pad;
+      const X=x=>mL+(x-xmin)/(xmax-xmin)*(W-mL-8);
+      const Y=y=>H-mB-(y-ymin)/(ymax-ymin)*(H-mB-mT);
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle='#20242d';ctx.lineWidth=1;
+      for(let i=1;i<6;i++){const px=mL+(W-mL-8)*i/6;ctx.beginPath();ctx.moveTo(px,mT);ctx.lineTo(px,H-mB);ctx.stroke();}
+      for(let i=1;i<5;i++){const py=mT+(H-mB-mT)*i/5;ctx.beginPath();ctx.moveTo(mL,py);ctx.lineTo(W-8,py);ctx.stroke();}
+      ctx.strokeStyle='#3c4250';ctx.lineWidth=1.3;
+      if(ymin<=0&&ymax>=0){ctx.beginPath();ctx.moveTo(mL,Y(0));ctx.lineTo(W-8,Y(0));ctx.stroke();}
+      // tangent green dashed
+      ctx.strokeStyle='#67c587';ctx.lineWidth=1.8;ctx.setLineDash([7,4]);
+      ctx.beginPath();ctx.moveTo(X(xmin),Y(L(xmin)));ctx.lineTo(X(xmax),Y(L(xmax)));ctx.stroke();ctx.setLineDash([]);
+      // f blue
+      ctx.strokeStyle='#5f8af7';ctx.lineWidth=2.4;ctx.beginPath();
+      for(let px=mL;px<=W-8;px++){const x=xmin+(px-mL)/(W-mL-8)*(xmax-xmin);
+        px===mL?ctx.moveTo(px,Y(d.f(x))):ctx.lineTo(px,Y(d.f(x)));}
+      ctx.stroke();
+      // anchor
+      ctx.fillStyle='#e8d27a';ctx.beginPath();ctx.arc(X(a),Y(d.f(a)),5,0,7);ctx.fill();
+      ctx.fillStyle='#6f7683';ctx.font='10px sans-serif';ctx.textAlign='center';
+      ctx.fillText('a = '+a,X(a),H-8);
+      // readout at the right edge
+      const xe=xmax,err=d.f(xe)-L(xe);
+      $('#lzOut').innerHTML=`L(x) = <b>${d.Ltxt}</b><br>
+        at x = ${fmt(xe)}: f(x) = ${fmt(d.f(xe))}, L(x) = ${fmt(L(xe))}<br>
+        f(x) − L(x) = <b>${fmt(err)}</b> · max |error| in window = <b>${fmt(maxErr)}</b><br>
+        <span class="muted">${d.bend}</span>`;
+    }
+    $('#lzFn').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;k=b.dataset.k;
+      [...$('#lzFn').children].forEach(c=>c.classList.remove('on'));b.classList.add('on');draw();});
+    $('#lzZm').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;z=+b.dataset.z;
+      [...$('#lzZm').children].forEach(c=>c.classList.remove('on'));b.classList.add('on');draw();});
+    draw();
+  }
+};
+
 /* ============================================================
    Render: Learn
 ============================================================ */
@@ -895,7 +1046,8 @@ function renderHWList(){
   const wrap=$('#hwList');wrap.innerHTML='';
   const sw=el('div','chswitch');sw.innerHTML=chTabsHtml();bindChTabs(sw,switchChapter);wrap.appendChild(sw);
   const c=CHAPTERS[S.ch-1];
-  const list=HW.filter(h=>h.id.indexOf('c2')===0?(S.ch===2):(S.ch===1));
+  const hwCh=h=>h.id.indexOf('c2')===0?2:(h.id.indexOf('c3')===0?3:1);
+  const list=HW.filter(h=>hwCh(h)===S.ch);
   const intro=el('div','',`<h2 style="font-size:18px;margin-bottom:4px">${c.name} Homework <span style="color:var(--faint);font-size:13px;font-weight:400">— ${list.length} problems · I will guide, not solve for you</span></h2>
     <p class="muted" style="font-size:13.5px;margin-bottom:10px">Rule of our sessions: I ask one small question at a time. You commit to an answer, then we check. Full walkthroughs only appear after you have tried — that is how understanding sticks.</p>`);
   wrap.appendChild(intro);
@@ -981,9 +1133,10 @@ function buildReviewSet(){
 }
 const QUIZ_CH_COPY={
   1:'domains, composition, transformations, trig, modeling',
-  2:'rates & tangents, limit laws, ε–δ, one-sided limits, continuity, asymptotes'
+  2:'rates & tangents, limit laws, ε–δ, one-sided limits, continuity, asymptotes',
+  3:'derivative definition, differentiation rules, rates & motion, trig & chain rule, implicit, related rates, linearization'
 };
-function quizSetCh(set){return parseInt(set.id.replace('set',''),10)<=5?1:2;}
+function quizSetCh(set){const n=parseInt(set.id.replace('set',''),10);return n<=5?1:(n<=8?2:3);}
 function renderQuizHome(){
   const a=$('#quizArea');a.innerHTML='';
   const sw=el('div','chswitch');sw.innerHTML=chTabsHtml();bindChTabs(sw,switchChapter);a.appendChild(sw);
@@ -1177,7 +1330,10 @@ function renderMastery(){
     r.onload=()=>{try{
       const d=JSON.parse(r.result);
       if(!d||typeof d!=='object')throw 0;
-      S=Object.assign(newStore(),d);saveStore();renderAll();
+      S=Object.assign(newStore(),d);
+      if(Array.isArray(S.secDone)&&S.secDone.length<LESSONS.length)S.secDone.length=LESSONS.length;
+      if(!CHAPTERS.some(c=>c.n===S.ch))S.ch=1;
+      saveStore();renderAll();
       alert('Progress imported ✓');
     }catch(e){alert('That file does not look like a valid progress backup.');}};
     r.readAsText(fi.files[0]);fi.value='';
@@ -1356,12 +1512,12 @@ applyTheme();
 
 const ONBOARD=[
   {title:'Welcome to MA119 👋',
-   p:"I'm Ms. Lin, your guide for Chapter 1 — Functions and Chapter 2 — Limits and Continuity. I'll ask one small question at a time and let you do the thinking. Before we start, two quick questions so I can match your pace.",
+   p:"I'm Ms. Lin, your guide for Chapter 1 — Functions, Chapter 2 — Limits and Continuity, and Chapter 3 — Derivatives. I'll ask one small question at a time and let you do the thinking. Before we start, two quick questions so I can match your pace.",
    picks:null},
   {key:'goal',title:'What brings you here today?',
    p:'You can switch modes any time from the toolbar.',
    picks:[
-     {v:'learn',t:'Learn from scratch',s:'Step through Chapters 1–2 with guidance'},
+     {v:'learn',t:'Learn from scratch',s:'Step through Chapters 1–3 with guidance'},
      {v:'review',t:'Quick review',s:'I have seen this before'},
      {v:'hw',t:'Homework help',s:'Guide me through the problems'},
      {v:'quiz',t:'Practice quiz',s:'Exam-style sets with analysis'}]},

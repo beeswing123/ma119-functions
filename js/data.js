@@ -7,8 +7,9 @@ const T=(en,zh)=>zh?`${en} <span class="zh">（${zh}）</span>`:en;
 const CHAPTERS=[
   {n:1, short:'Ch.1 · Functions',      name:'Chapter 1 · Functions',                 week:'Week 2', from:0, to:5},
   {n:2, short:'Ch.2 · Limits',         name:'Chapter 2 · Limits and Continuity',     week:'Week 3', from:5, to:12},
+  {n:3, short:'Ch.3 · Derivatives',    name:'Chapter 3 · Derivatives',               week:'Week 4', from:12, to:21},
 ];
-function chOfSec(i){return i<5?1:2;}
+function chOfSec(i){return i<5?1:(i<12?2:3);}
 function chRange(n){const c=CHAPTERS.find(c=>c.n===n)||CHAPTERS[0];return [c.from,c.to];}
 function secIndices(n){const [f,t]=chRange(n);const a=[];for(let i=f;i<t;i++)a.push(i);return a;}
 
@@ -1104,6 +1105,704 @@ const LESSONS=[
           'Oblique when degN = degD + 1; long division gives the line',
           '“lim = ∞” is still DNE — a regular, informative escape',
           'Asymptote checklist: domain/intercepts → VAs → end behavior → sign → sketch']}
+]},
+
+/* ============================================================
+   CHAPTER 3 — DERIVATIVES (Week 4)
+============================================================ */
+
+/* ---------------- §3.1 ---------------- */
+{title:'§3.1 Derivative at a Point', steps:[
+  {t:'say', html:`<p>Welcome to <b>Week 4</b> — and to the <b>derivative</b> <span class="zh">导数</span>, the idea all of Chapter 2 was preparing.</p>
+   <p>Two famous problems turn out to be the SAME formula. The <b>tangent problem</b> (geometry): what is the slope of y = f(x) at the single point P(x₀, f(x₀))? A slope needs two points; we have one. The <b>velocity problem</b> (physics): how fast is an object moving at the single instant t = t₀? Speed needs an interval; we have a moment.</p>
+   <p>Fermat worked tangents in the 1630s; Galileo's school chased instantaneous speed. Newton and Leibniz fused both streams into one calculus (1665–1684). The limit language of §2.1 is their shared idea in modern dress.</p>`,
+   detail:'The historical order matters for learning: limits FIRST (Week 3), then the derivative as a SPECIAL limit (Week 4). You already did the hard conceptual work — instantaneous rate = limit of average rates. This week we name that limit, learn its geometry, then build a rulebook so we never have to take the limit again.'},
+  {t:'say', html:`<p><b>Slope of the curve at P</b> <span class="zh">曲线在 P 点的斜率</span>:</p>
+   <div class="formula">m = lim<sub>h→0</sub> [ f(x₀ + h) − f(x₀) ] / h</div>
+   <p>The fraction is the secant slope from P to Q(x₀+h, f(x₀+h)) — an average rate you already know. Let h → 0 and Q slides into P; the secants settle onto one line.</p>
+   <p><b>Tangent line equation:</b> <span class="math">y = f(x₀) + m(x − x₀)</span> — point-slope form through P with the limiting slope.</p>`,
+   detail:'The tangent is NOT defined as "a line that touches the curve only once". For y = x³ at the origin the tangent y = 0 CROSSES the curve, and many secant-like lines touch only once without being tangent. The definition is purely the limit of secant slopes — forget the dictionary meaning of "touch".'},
+  {t:'ask', q:'Why can we not just compute [f(x₀+h) − f(x₀)]/h at h = 0?',
+   choices:[
+     {txt:'It becomes 0/0 — undefined; we need the limit as h → 0',ok:true},
+     {txt:'Division is banned in calculus',ok:false},
+     {txt:'Points have no coordinates',ok:false}],
+   ok:'Exactly the 0/0 trap from Week 3. Substitution dies; the limit survives and gives a finite slope.',
+   fb:'Plug h = 0 into numerator and denominator — what comes out?'},
+  {t:'say', html:`<p>The quotient has a name and the limit has a name.</p>
+   <div class="formula"><b>difference quotient</b> <span class="zh">差商</span>: [ f(x₀+h) − f(x₀) ] / h<br>
+   <b>derivative of f at x₀</b> <span class="zh">f 在 x₀ 处的导数</span>: f′(x₀) = lim<sub>h→0</sub> of it</div>
+   <p>One concept, <b>three faces</b>:</p>
+   <ul class="recap"><li><b>Algebra:</b> f′(x₀) is a single NUMBER.</li>
+   <li><b>Geometry:</b> it is the slope of the tangent at (x₀, f(x₀)).</li>
+   <li><b>Physics:</b> it is the instantaneous rate of change of y w.r.t. x at x₀.</li></ul>`,
+   detail:'Notation you will meet: f′(x₀) ("f prime of x zero"), y′|ₓ₌ₓ₀, and Leibniz dy/dx|ₓ₌ₓ₀. All three are the same number. The little prime is Newton-flavoured; dy/dx makes the variable explicit — §3.2 returns to this fight.'},
+  {t:'widget', id:'secant',
+   html:`<p>You met this lab in §2.1 — revisit it now with new vocabulary. The readout's limiting number is not just "the tangent slope": it is <b>f′(2)</b>, the derivative AT THE POINT. Try h = 1, 0.1, 0.01 and read 4 + h settle onto 4.</p>`},
+  {t:'say', html:`<p><b>Worked example from the lecture:</b> f(x) = 1/x at x₀ = 2.</p>
+   <p>Step 1 — write the difference quotient:</p>
+   <div class="formula">[ 1/(2+h) − 1/2 ] / h = [ (2 − (2+h)) / (2(2+h)) ] / h = −h / [2h(2+h)]</div>
+   <p>Step 2 — cancel h (h ≠ 0 on the approach), then let h → 0:</p>
+   <div class="formula">= −1 / [2(2+h)] → −1/4. So f′(2) = −1/4.</div>
+   <p>Step 3 — tangent line: <span class="math">y = 1/2 − (1/4)(x − 2)</span>.</p>`,
+   detail:'Verify the line by rise/run: over a run of 2 it drops 1/2, slope −1/4. Also note the f′ domain warning to come: f itself is undefined at 0, and so is f′ there.'},
+  {t:'ask', q:'f(x) = x² − 3x (Homework B1 warm-up). Write [f(2+h) − f(2)]/h. f(2) = 4 − 6 = −2.',
+   choices:[
+     {txt:'[(2+h)² − 3(2+h) + 2] / h = 1 + h',ok:true},
+     {txt:'h² / h = h',ok:false},
+     {txt:'(2 + h − 2)/h = 1',ok:false}],
+   ok:'Expand: (4+4h+h² −6−3h) − (−2) = h + h²; divide by h → 1 + h. The pieces always collapse to something with the h-cancellation waiting.',
+   h2:'Compute f(2+h) = (2+h)² − 3(2+h) first, then subtract f(2) = −2 (which ADDS 2).',
+   scaffold:[
+    {q:'(2+h)² − 3(2+h) expanded is…',
+     choices:[{txt:'4 + 4h + h² − 6 − 3h = h² + h − 2',ok:true},{txt:'4 + h² − 6 = h² − 2',ok:false}],
+     fb:'Square carefully: (2+h)² = 4 + 4h + h².',oktxt:'h² + h − 2.'},
+    {q:'Subtract f(2) = −2, then divide by h:',
+     choices:[{txt:'(h² + h − 2 + 2)/h = h + 1',ok:true},{txt:'(h² + h − 2)/h',ok:false}],
+     fb:'f(2+h) − f(2) means subtract (−2).',oktxt:'1 + h.'}
+   ]},
+  {t:'input', q:'Since the quotient simplifies to 1 + h, what is f′(2) = limₕ→₀ (1 + h)?',
+   accept:v=>{const n=parseFloat(norm(v));return !isNaN(n)&&Math.abs(n-1)<1e-9;},
+   fb:'Let h head to 0 in 1 + h — no 0/0 left to fight.',
+   reveal:'f′(2) = 1. The tangent to x² − 3x at (2, −2) has slope 1.',
+   placeholder:'a number'},
+  {t:'say', html:`<p><b>No formula? Estimate from data.</b> A submersible's depth log (illustrative lecture data): at t = 4 min depth 120 m, at t = 8 min depth 470 m. Estimated rate near the middle:</p>
+   <div class="formula">(470 − 120)/(8 − 4) = 350/4 = 87.5 m/min</div>
+   <p>This is a <b>central difference quotient</b> <span class="zh">中心差商</span>: [f(t+Δt) − f(t−Δt)]/(2Δt), using one point on each side. Your smartwatch pace, a glucose trend arrow, a weather pressure trace — all are difference quotients on recent samples.</p>
+   <p><b>Two traps:</b> tiny denominators amplify measurement noise (smooth first); events faster than your sampling interval are invisible.</p>`,
+   detail:'Why "central"? Using symmetric points t±Δt is typically more accurate for a smooth function than the forward quotient [f(t+Δt)−f(t)]/Δt — leading errors cancel. Clinical devices use this trick when reporting "instantaneous" trends from discrete readings.'},
+  {t:'ask', q:'Depth 120 m at t=4 and 470 m at t=8. What is the average descent rate over [4, 8]?',
+   choices:[
+     {txt:'87.5 m/min',ok:true},
+     {txt:'350 m/min',ok:false},
+     {txt:'470/8 = 58.75 m/min',ok:false}],
+   ok:'350 metres over 4 minutes = 87.5 m/min. Always divide the CHANGE in depth by the CHANGE in time — not one value by one time.',
+   fb:'Δdepth / Δtime, not final/final.'},
+  {t:'recap', title:'§3.1 Takeaways', mn:'One formula, three faces: f′(x₀) is a number, a tangent slope, and an instant rate. Secants in, tangent out — cancel h, then take h → 0.',
+   items:['Slope at P: m = limₕ→₀ [f(x₀+h) − f(x₀)]/h',
+          'Tangent line: y = f(x₀) + m(x − x₀)',
+          'Tangent ≠ "touches once": x³ at 0 crosses its tangent',
+          'f′(x₀): algebra number · geometry slope · physics instant rate',
+          'Routine: write quotient → expand → cancel h → take limit',
+          'Data: central difference quotient; watch noise and sampling']}
+]},
+
+/* ---------------- §3.2 ---------------- */
+{title:'§3.2 The Derivative as a Function', steps:[
+  {t:'say', html:`<p>§3.1 computed one slope at one point. Now <b>release the anchor</b>: let the point x vary.</p>
+   <div class="formula">f′(x) = lim<sub>h→0</sub> [ f(x+h) − f(x) ] / h</div>
+   <p>Same machine, but instead of feeding it x₀ = 2, we feed a variable x. Out comes a whole FUNCTION: the slope of f at every point where the limit exists. Computing f′ from f is called <b>differentiation</b> <span class="zh">求导</span>; f is <b>differentiable</b> <span class="zh">可导的</span> wherever f′ exists.</p>`,
+   detail:'Domain warning — f′ may live on a SMALLER set than f. For f(x) = 1/x, both exclude 0. For f(x) = |x|, f exists everywhere but f′ fails at 0. The domain of f′ is exactly the set of points at which the difference-quotient limit exists.'},
+  {t:'ask', q:'f′(a) and f′(x) differ how?',
+   choices:[
+     {txt:'f′(a) is one number (slope at x = a); f′ is the slope function',ok:true},
+     {txt:'They are unrelated objects',ok:false},
+     {txt:'f′(x) is the integral of f',ok:false}],
+   ok:'A number versus a function. Evaluate f′ at x = a and you get the number f′(a).',
+   fb:'One has a fixed point plugged in; the other still carries a variable.'},
+  {t:'say', html:`<p><b>Reading the pair of graphs</b> — the derivative records the slope of the top curve at every x:</p>
+   <ul class="recap"><li>f increasing ⇔ f′ ABOVE the axis (positive slope)</li>
+   <li>f decreasing ⇔ f′ BELOW the axis (negative slope)</li>
+   <li>Peaks, valleys, flat ledges of f ⇔ f′ = 0 (horizontal tangents)</li>
+   <li>Steepest sections of f ⇔ largest |f′|</li></ul>
+   <p>A seismograph trace, a patient's temperature chart, a stock price — devices hand us curves without formulas. Sketching f′ is how rate of change is extracted from raw recorded data.</p>`,
+   detail:'Example: f(x) = x³ − 3x climbs, then dips between −1 and 1, then climbs. Its derivative 3x² − 3 is positive outside [−1,1], negative inside, and zero at the turning points x = ±1. The graph of f′ is the "slope thermometer" of f.'},
+  {t:'widget', id:'dfunc',
+   html:`<p>The panel draws f in blue and its derivative f′ in green dashed; the moving tangent shows the current slope. Switch between x², x³ − 3x and sin x, and drag the point. Verify: turning points of f sit exactly on zeros of f′.</p>`},
+  {t:'ask', q:'On the widget for f(x) = x³ − 3x, at a local maximum or minimum of f the green f′ curve…',
+   choices:[
+     {txt:'Crosses zero (f′ = 0 at the turning point)',ok:true},
+     {txt:'Reaches its own maximum',ok:false},
+     {txt:'Is undefined',ok:false}],
+   ok:'Horizontal tangent ⇒ slope zero ⇒ f′ = 0. Drop those zeros onto the f′-axis first when sketching.',
+   fb:'What is the tangent slope at a peak?'},
+  {t:'say', html:`<p><b>Sketching f′ from f: a four-step reading.</b></p>
+   <ul class="recap"><li><b>1 · Mark the zeros.</b> Peaks, valleys, plateaus → f′ = 0 points: the skeleton.</li>
+   <li><b>2 · Sign by monotonicity.</b> Increasing → f′ above axis; decreasing → below.</li>
+   <li><b>3 · Size by steepness.</b> The steeper f is, the farther f′ sits from the axis; flattening sections pull f′ toward 0.</li>
+   <li><b>4 · Join smoothly.</b> If the slope of f changes gradually, f′ is continuous; a corner in f makes a JUMP in f′.</li></ul>`,
+   detail:'A cubic gives a quadratic f′ with this sign pattern; a quartic "W" gives a cubic f′. You can often name the degree of f′ before knowing any formula: one derivative knocks the degree down by one.'},
+  {t:'ask', q:'f is a smooth curve, decreasing throughout the left half and increasing throughout the right. The f′ sketch is…',
+   choices:[
+     {txt:'Negative on the left, zero at the valley, positive on the right',ok:true},
+     {txt:'Positive everywhere',ok:false},
+     {txt:'Zero everywhere',ok:false}],
+   ok:'Sign follows monotonicity; the valley contributes the zero. Shape of f′? Often a parabola-like arc crossing the axis once.'},
+  {t:'say', html:`<p><b>Where the limit fails — four non-differentiable points.</b></p>
+   <ul class="recap"><li><b>Corner:</b> |x| at 0 — left slope −1, right slope +1, no agreement.</li>
+   <li><b>Cusp:</b> x^(2/3) at 0 — slopes → ±∞ on the two sides.</li>
+   <li><b>Vertical tangent:</b> ∛x at 0 — slope → +∞ from both sides (f continuous, f′ not finite).</li>
+   <li><b>Discontinuity:</b> any break or hole of f — no tangent where the curve is absent.</li></ul>
+   <p>Differentiability implies continuity (prove by writing f(x+h)−f(x) = h·(quotient) → 0); the converse is FALSE — |x| is the standard counterexample.</p>`,
+   detail:'Notation war footnote: Newton wrote dots (ẋ, ẍ — still used in physics for time derivatives); Leibniz wrote dy/dx, making the variable explicit and making the chain rule look obvious. Britain kept dots out of loyalty; the continent used dy/dx and notation won. §3.6 profits from Leibniz.'},
+  {t:'ask', q:'f(x) = |x| at x = 0 is continuous, but the difference quotient gives (−h)/|h| → −1 from the left and +1 from the right. So…',
+   choices:[
+     {txt:'f is NOT differentiable at 0 — a corner',ok:true},
+     {txt:'f′(0) = 0',ok:false},
+     {txt:'f is not continuous at 0',ok:false}],
+   ok:'Two-sided limit must exist for f′(0); −1 ≠ +1, so it fails. Continuous ≠ differentiable.',
+   fb:'Do the two one-sided slopes agree?',
+   h2:'Compare the secant slopes from x < 0 and x > 0.',
+   scaffold:[
+    {q:'Slope just to the RIGHT of 0 on |x|:',
+     choices:[{txt:'+1 (the line y = x)',ok:true},{txt:'−1',ok:false}],
+     fb:'|x| = x there.',oktxt:'+1.'},
+    {q:'Slope just to the LEFT:',
+     choices:[{txt:'−1 (the line y = −x)',ok:true},{txt:'+1',ok:false}],
+     fb:'|x| = −x there.',oktxt:'−1 ≠ +1, so no derivative.'}
+   ]},
+  {t:'recap', title:'§3.2 Takeaways', mn:'Release the anchor: f′ is the slope-function of f. Increasing = f′ positive, turning = f′ zero; corners and cusps silence f′.',
+   items:['f′(x) = limₕ→₀ [f(x+h) − f(x)]/h; differentiation makes a function',
+          'dom(f′) can be SMALLER than dom(f)',
+          'f ↑ ⇔ f′ > 0; f ↓ ⇔ f′ < 0; turning points ⇔ f′ = 0',
+          'Sketch f′: zeros → signs → steepness → join',
+          'Non-differentiable: corner, cusp, vertical tangent, discontinuity',
+          'Differentiable ⇒ continuous; continuous ⇏ differentiable (|x|)']}
+]},
+
+/* ---------------- §3.3 ---------------- */
+{title:'§3.3 Differentiation Rules', steps:[
+  {t:'say', html:`<p>Taking the limit every time is honest but slow. From here on we <b>package the limits into rules</b>.</p>
+   <p>The meta-skill is <b>structure first</b>: before reaching for a rule, ask — is this a sum of pieces, a product of factors, a quotient, or a composition? The answer chooses the rule. Recognising structure is 80% of differentiation; algebra is the other 20%.</p>`,
+   detail:'Every rule below is a theorem with hypotheses (u, v differentiable) and a proof that is just the limit definition plus algebra. You may forget a rule and re-derive it; you cannot skip the structural reading.'},
+  {t:'say', html:`<p><b>Rules 1–4 — the linear machinery:</b></p>
+   <div class="formula">(c)′ = 0 &nbsp;&nbsp; (xⁿ)′ = n xⁿ⁻¹ &nbsp;&nbsp; (cu)′ = c u′ &nbsp;&nbsp; (u ± v)′ = u′ ± v′</div>
+   <p>The power rule holds for EVERY real exponent: d/dx(x⁻¹) = −x⁻², d/dx(√x) = ½x⁻¹/². Rewrite radicals and reciprocals as powers first.</p>
+   <p>Why it works for positive integers: expand (x+h)ⁿ = xⁿ + n xⁿ⁻¹h + (terms with h² or more); subtract xⁿ, divide by h, let h → 0 — only n xⁿ⁻¹ survives.</p>`,
+   detail:'Binomial theorem does the heavy lifting; all later terms carry h² or higher and die on division+limit. Fractional/negative exponents need a stronger argument (seen later with exponentials/logs), but the SAME formula n xⁿ⁻¹ applies.'},
+  {t:'ask', q:'Quick drill — rewrite 1/x³ as a power, then differentiate:',
+   choices:[
+     {txt:'x⁻³ ⇒ −3x⁻⁴',ok:true},
+     {txt:'x³ ⇒ 3x²',ok:false},
+     {txt:'−3x³ ⇒ −9x²',ok:false}],
+   ok:'Reciprocal flips the sign of the exponent; then bring −3 down and drop the power by one.',
+   fb:'1/x³ = x to what power?'},
+  {t:'ask', q:'Rewrite ∛x = x^(1/3). Its derivative is…',
+   choices:[
+     {txt:'(1/3) x^(−2/3)',ok:true},
+     {txt:'(1/3) x^(1/3)',ok:false},
+     {txt:'3 x^(2/3)',ok:false}],
+   ok:'n = 1/3: bring it down, exponent becomes 1/3 − 1 = −2/3. Roots are just fractional powers.',
+   fb:'n xⁿ⁻¹ with n = 1/3.'},
+  {t:'input', q:'Differentiate term by term: f(x) = 3x⁴ − 5x² + 2x − 7. What is the constant term of f′ (the derivative of −7)? First answer the constant term:',
+   accept:v=>{const n=parseFloat(norm(v));return !isNaN(n)&&n===0;},
+   fb:'A constant never changes; its rate of change is 0.',
+   reveal:'(−7)′ = 0 — do not carry the −7 into f′.',
+   placeholder:'a number'},
+  {t:'ask', q:'Then the full derivative f′(x) = ?',
+   choices:[
+     {txt:'12x³ − 10x + 2',ok:true},
+     {txt:'12x³ − 10x + 2 − 7',ok:false},
+     {txt:'3x³ − 5x + 2',ok:false}],
+   ok:'3·4=12, −5·2=−10, 2·1=2, constant vanishes. Power rule, one term at a time.',
+   h2:'Differentiate each monomial separately and keep the connecting signs.',
+   scaffold:[
+    {q:'(3x⁴)′ =',choices:[{txt:'12x³',ok:true},{txt:'7x³',ok:false},{txt:'12x⁴',ok:false}],
+     fb:'3 × 4 = 12, exponent 4−1.',oktxt:'12x³.'},
+    {q:'(2x)′ and (−7)′ =',choices:[{txt:'2 and 0',ok:true},{txt:'2x and −7',ok:false}],
+     fb:'x⁰ = 1; constants die.',oktxt:'2 and 0.'}
+   ]},
+  {t:'say', html:`<p><b>Product rule</b> <span class="zh">乘积法则</span> — take turns differentiating:</p>
+   <div class="formula">(uv)′ = u′v + uv′</div>
+   <p><b>Warning:</b> (uv)′ ≠ u′v′. Counterexample: (x·x)′ = (x²)′ = 2x, but x′·x′ = 1·1 = 1.</p>
+   <p>Rectangle proof: let u, v be sides of a growing rectangle. New area splits into strips u′v·Δx and uv′·Δx plus a corner square of order (Δx)²; divide by Δx and let Δx → 0 — the corner dies, leaving u′v + uv′. Triple product: (uvw)′ = u′vw + uv′w + uvw′.</p>`,
+   detail:'Choose your weapon: for (2x+3)(x²−1) you may expand first (power rule) or use the product rule — both give 6x² + 6x − 2. When expansion is cheap it is safer; when factors are bulky (trig, roots), the product rule wins.'},
+  {t:'ask', q:'y = x² sin x. Set u = x², v = sin x (and recall from the preview: (sin x)′ = cos x). Then y′ = ?',
+   choices:[
+     {txt:'2x sin x + x² cos x',ok:true},
+     {txt:'2x cos x',ok:false},
+     {txt:'x² cos x',ok:false}],
+   ok:'u′v + uv′ = 2x·sin x + x²·cos x. Each term differentiates exactly ONE factor.',
+   fb:'Two terms: differentiate the first, keep the second; then keep the first, differentiate the second.'},
+  {t:'say', html:`<p><b>Quotient rule</b> <span class="zh">商的法则</span> — order matters, bottom gets squared:</p>
+   <div class="formula">(u/v)′ = (u′v − uv′) / v² &nbsp;&nbsp;<span class="zh">"low d-high minus high d-low, over low squared"</span></div>
+   <p>Two-line derivation: u = yv ⇒ u′ = y′v + yv′ ⇒ y′ = (u′ − yv′)/v = (u′v − uv′)/v². The minus sign is not negotiable.</p>
+   <p>Three classic errors: writing PLUS on top (that is the product rule); swapping the subtraction (flips the sign); forgetting to square the denominator.</p>`,
+   detail:'Avoid the rule when you can: (3x² + x)/x divides first to 3x + 1, derivative 3 — five lines saved. Strategy ranking: simplify → negative powers (u·v⁻¹ with the product rule) → full quotient rule last.'},
+  {t:'ask', q:'y = (x² − 1)/(x² + 1) (lecture example). Apply (u′v − uv′)/v² and simplify the numerator:',
+   choices:[
+     {txt:'4x/(x² + 1)²',ok:true},
+     {txt:'2x/(x² + 1)²',ok:false},
+     {txt:'4x/(x² − 1)²',ok:false}],
+   ok:'2x(x²+1) − (x²−1)2x = 2x³ + 2x − 2x³ + 2x = 4x. Cubic terms cancel — always simplify.',
+   h2:'u = x²−1 (u′ = 2x), v = x²+1 (v′ = 2x); write the four pieces before combining.',
+   scaffold:[
+    {q:'The top of the quotient expression is…',
+     choices:[{txt:'2x(x²+1) − (x²−1)(2x)',ok:true},{txt:'2x(x²−1) − (x²+1)(2x)',ok:false}],
+     fb:'u′v first, MINUS uv′.',oktxt:'2x(x²+1) − (x²−1)(2x).'},
+    {q:'After expanding, the x³ terms cancel and the x terms give…',
+     choices:[{txt:'4x',ok:true},{txt:'2x³',ok:false}],
+     fb:'+2x³ and −2x³ cancel; 2x − (−2x).',oktxt:'4x.'}
+   ]},
+  {t:'say', html:`<p><b>The normal line</b> <span class="zh">法线</span> — the tangent's partner. It is the line through P PERPENDICULAR to the tangent:</p>
+   <div class="formula">m<sub>normal</sub> = −1 / m<sub>tangent</sub> &nbsp;(m<sub>tangent</sub> ≠ 0)</div>
+   <p>Optics measures the angle of incidence against the NORMAL to the mirror — telescopes, periscopes and fibre-optic cables are designed with normals.</p>`,
+   detail:'If the tangent is horizontal (m = 0) the normal is vertical; if the tangent is vertical the normal is horizontal. The negative reciprocal flips the fraction and the sign.'},
+  {t:'ask', q:'Curve y = x³ at P(1, 1): mₜₐₙ = 3·1² = 3. The normal slope and line are…',
+   choices:[
+     {txt:'m = −1/3, line y − 1 = −(1/3)(x − 1)',ok:true},
+     {txt:'m = 3, same line as the tangent',ok:false},
+     {txt:'m = 1/3, y = (1/3)x',ok:false}],
+   ok:'Negative reciprocal of 3 is −1/3; then point-slope through (1,1).',
+   fb:'Perpendicular slopes multiply to −1.'},
+  {t:'say', html:`<p><b>Derivatives of derivatives.</b> The <b>second derivative</b> <span class="zh">二阶导数</span> is the derivative of the derivative:</p>
+   <div class="formula">f″(x) = d/dx (f′(x)) = d²y/dx²; inductively f⁽ⁿ⁾(x)</div>
+   <p>The ladder of motion: s(t) → v(t) = s′(t) → a(t) = v′(t) = s″(t). The push into your car seat is f″, not f′ — you feel ACCELERATION, not speed.</p>
+   <p>Notation: primes y′, y″, y‴ for low orders; parenthesised f⁽⁴⁾, f⁽ⁿ⁾ (parentheses distinguish order from power); Leibniz d²y/dx².</p>`,
+   detail:'A polynomial runs out: x⁴ → 4x³ → 12x² → 24x → 24 → 0 forever. Derivatives beyond the degree of a polynomial vanish — order n+1 and above are identically zero.'},
+  {t:'ask', q:'f(x) = x⁴. f′, f″, f‴ and f⁽⁴⁾ are, in order…',
+   choices:[
+     {txt:'4x³, 12x², 24x, 24',ok:true},
+     {txt:'4x³, 12x², 24x, 0',ok:false},
+     {txt:'x³, x², x, 1',ok:false}],
+   ok:'Keep bringing the exponent down and multiplying: 4, 4·3=12, 12·2=24, 24·1=24. One more derivative gives 0.',
+   fb:'Each step: coefficient × exponent, then exponent − 1.'},
+  {t:'recap', title:'§3.3 Takeaways', mn:'Structure first, rule second: sums linear, products take turns, quotients subtract and square, and a degree-n polynomial runs out after n+1 derivatives.',
+   items:['(c)′=0; (xⁿ)′=n xⁿ⁻¹ (every real n); linearity for sums and multiples',
+          'Product: (uv)′ = u′v + uv′ — NOT u′v′',
+          'Quotient: (u/v)′ = (u′v − uv′)/v² — minus sign, square the bottom',
+          'Simplify/expand/rewrite powers BEFORE choosing a rule',
+          'Normal slope = −1/mₜₐₙ; used in optics',
+          'f″ = (f′)′; s → v → a; x⁴ ladder ends …24, 0']}
+]},
+
+/* ---------------- §3.4 ---------------- */
+{title:'§3.4 Derivative as a Rate of Change', steps:[
+  {t:'say', html:`<p>Strip away geometry: the derivative is <b>how fast one quantity responds to another</b>.</p>
+   <div class="formula">Average over [x₁, x₂]: Δy/Δx = (f(x₂) − f(x₁))/(x₂ − x₁) — a secant<br>
+   Instantaneous at x: f′(x) = lim<sub>Δx→0</sub> Δy/Δx — the tangent</div>
+   <p><b>Units discipline:</b> a rate always carries units "units of y per unit of x". Position m, time s ⇒ velocity m/s, acceleration m/s². If your velocity comes out in metres, the unit check has already caught the error.</p>`,
+   detail:'The lecture stresses carrying units through the whole computation as a free error-check — the same habit as dimensional analysis in med-sci dosing: mg/kg, mL/h, beats/min.'},
+  {t:'say', html:`<p><b>Motion along a line — the complete vocabulary.</b></p>
+   <ul class="recap"><li><b>Displacement</b> <span class="zh">位移</span>: Δs = s(t+Δt) − s(t) — SIGNED; returning to start means displacement 0.</li>
+   <li><b>Average velocity:</b> v_avg = Δs/Δt</li>
+   <li><b>Instantaneous velocity:</b> v(t) = ds/dt</li>
+   <li><b>Speed</b> <span class="zh">速率</span>: |v(t)| — what the speedometer shows (no direction)</li>
+   <li><b>Acceleration:</b> a(t) = dv/dt = d²s/dt²</li></ul>`,
+   detail:'Velocity is signed; speed is its absolute value. Direction of travel is the driver\'s business: reversing out of a parking spot gives v < 0 even though the car is moving.'},
+  {t:'ask', q:'A particle goes s(0)=0 → s(2)=10 → s(4)=0 (out and back to start). Its displacement over [0,4] and its distance travelled are…',
+   choices:[
+     {txt:'Displacement 0; distance 20',ok:true},
+     {txt:'Displacement 20; distance 20',ok:false},
+     {txt:'Both 0',ok:false}],
+   ok:'Displacement cares only about endpoints (0 → 0 = 0); distance accumulates every leg: 10 out + 10 back = 20.',
+   fb:'Displacement is SIGNED endpoint-to-endpoint; distance adds all ground covered.'},
+  {t:'say', html:`<p><b>Free fall — one parabola, three derivatives of meaning.</b></p>
+   <div class="formula">s(t) = s₀ + v₀t − ½ g t², g ≈ 9.8 m/s²<br>
+   Lecture case v₀ = 24.5 m/s from the ground: s = 24.5t − 4.9t²<br>
+   v(t) = 24.5 − 9.8t ⇒ v = 0 at t = 2.5 s (the top)<br>
+   a(t) = −9.8 m/s² — constant, at every instant</div>`,
+   detail:'Note this is the SAME 4.9 from Week 3: y = 4.9t² was distance fallen; here the upward launch gives −4.9t² plus initial speed. The secant→tangent lab computed v(2) = 19.6 for the dropped rock; the formula now produces velocities directly.'},
+  {t:'ask', q:'The top-of-flight trap: at t = 2.5 s the ball has v = 0. What is its acceleration there?',
+   choices:[
+     {txt:'a = −9.8 m/s² — gravity does not pause',ok:true},
+     {txt:'a = 0 because the ball is momentarily stopped',ok:false},
+     {txt:'a = +9.8, it has started falling',ok:false}],
+   ok:'"At rest for an instant" and "no force acting" are completely different statements. The ball pauses; gravity does not.',
+   fb:'v = 0 is a VALUE of velocity; acceleration is how v is CHANGING.'},
+  {t:'ask', q:'Braking while driving FORWARD: the car slows. Signs of v and a?',
+   choices:[
+     {txt:'v > 0, a < 0 — opposite signs, speed falls',ok:true},
+     {txt:'v > 0, a > 0',ok:false},
+     {txt:'v < 0, a < 0',ok:false}],
+   ok:'Opposite signs ⇒ slowing; SAME signs ⇒ speeding up. Reversing while braking gives v < 0, a > 0.',
+   h2:'Speed = |v|. For |v| to shrink, acceleration must point against velocity.',
+   scaffold:[
+    {q:'Velocity is positive because…',choices:[{txt:'Motion is in the forward direction',ok:true},{txt:'The car is fast',ok:false}],
+     fb:'Sign = direction.',oktxt:'v > 0.'},
+    {q:'Speed is falling, so acceleration points…',choices:[{txt:'Against motion: a < 0',ok:true},{txt:'With motion: a > 0',ok:false}],
+     fb:'Deceleration opposes velocity.',oktxt:'a < 0.'}
+   ]},
+  {t:'say', html:`<p><b>Speed-up rule (used on Homework B8):</b> an object speeds up exactly when v and a have the SAME sign, i.e. v·a &gt; 0; it slows when v·a &lt; 0; v = 0 or a = 0 are the transition instants.</p>
+   <p>For s(t) = t³ − 6t²: v = 3t² − 12t = 3t(t−4), a = 6t − 12 = 6(t−2). On t ≥ 0: v is negative on (0,4), positive on (4,6]; a is negative on (0,2), positive on (2,6). Same sign only on (0,2) (both −) and (4,6] (both +).</p>`,
+   detail:'Split the timeline at every zero of v and a (here t = 0, 2, 4), then read off sign pairs interval by interval — the systematic method the lecture hints for B8.'},
+  {t:'ask', q:'For s(t) = t³ − 6t², on which interval(s) of [0, 6] does the particle speed UP?',
+   choices:[
+     {txt:'(0, 2) and (4, 6] — v and a share a sign there',ok:true},
+     {txt:'(2, 4) only',ok:false},
+     {txt:'The whole [0, 6]',ok:false}],
+   ok:'v·a > 0 on (0,2) and (4,6]; on (2,4) velocity is negative but acceleration positive, so it slows.',
+   fb:'Make the sign table of v = 3t(t−4) and a = 6(t−2) first.'},
+  {t:'say', html:`<p><b>Marginal thinking — the derivative goes to economics.</b> For a cost function C(x):</p>
+   <div class="formula">marginal cost <span class="zh">边际成本</span> = C′(x) ≈ C(x+1) − C(x)</div>
+   <p>The derivative is the instantaneous, idealised version; the difference is the real cost of the NEXT whole unit. At large production levels they are nearly identical.</p>
+   <p>Same shape everywhere in science: dP/dt for a population, dC/dt for drug concentration in blood, the slope of a glucose trace — each is "the rate the measured quantity is changing right now".</p>`,
+   detail:'Why the approximation is honest: C(x+1) − C(x) is the difference quotient with Δx = 1; C′(x) is its limit as Δx → 0. One-unit steps are tiny relative to x when x is large, so the secant and tangent slopes nearly coincide.'},
+  {t:'ask', q:'C(x) = 0.02x² + 3x + 1000 euros for x doses. C′(x) = 0.04x + 3. The marginal cost at x = 100 is…',
+   choices:[
+     {txt:'7 euros/dose — the approximate cost of the 101st dose',ok:true},
+     {txt:'4 euros/dose',ok:false},
+     {txt:'1700 euros',ok:false}],
+   ok:'0.04(100) + 3 = 7. (1700 is the TOTAL cost C(100) — a stock, not a rate. Units again: euros per dose.)',
+   fb:'Evaluate the DERIVATIVE at 100, not C itself.'},
+  {t:'recap', title:'§3.4 Takeaways', mn:'Average is a secant; the derivative is the signed instant rate. Carry units; v·a > 0 means speeding up; marginal cost = C′(x) ≈ cost of the next unit.',
+   items:['v_avg = Δs/Δt; v(t) = s′(t); speed = |v|; a = v′ = s″',
+          'Displacement is signed and zero on return; distance always accumulates',
+          'Free fall: s = s₀ + v₀t − ½gt²; at the top v = 0 but a = −g ≠ 0',
+          'Speed up ⇔ v and a same sign (v·a > 0); split timeline at their zeros',
+          'Marginal cost C′(x) ≈ C(x+1) − C(x) — a rate, not a total',
+          'Rate units = y-units per x-unit (m/s, m/s², euros/unit)']}
+]},
+
+/* ---------------- §3.5 ---------------- */
+{title:'§3.5 Trigonometric Derivatives', steps:[
+  {t:'say', html:`<p>Tides, seasons, heartbeats, pure tones — nature oscillates, so calculus must differentiate sine.</p>
+   <div class="formula">d/dx (sin x) = cos x &nbsp;&nbsp;&nbsp; d/dx (cos x) = −sin x &nbsp;&nbsp;(<b>radians!</b>)</div>
+   <p>Each function is, up to a sign, the derivative of the other. The clean formulas rest on limₓ→₀ sin x / x = 1 — true ONLY in radians. In degrees an ugly π/180 factor would ride along forever.</p>`,
+   detail:'This is why Chapter 1 forced radians: the derivative of sin is cos without constants ONLY when angles are measured in radians. If your graphing software is set to degrees, the formulas fail.'},
+  {t:'say', html:`<p><b>Proof from first principles — (sin x)′ = cos x.</b></p>
+   <p>Step 1, difference quotient with the addition formula sin(x+h) = sin x cos h + cos x sin h:</p>
+   <div class="formula">[sin(x+h) − sin x]/h = sin x·(cos h − 1)/h + cos x·(sin h)/h</div>
+   <p>Step 2, apply the two Squeeze-Theorem limits from §2.4: (cos h−1)/h → 0 and (sin h)/h → 1:</p>
+   <div class="formula">= sin x · 0 + cos x · 1 = cos x. ■</div>
+   <p>The same argument mirrored with cos(x+h) gives (cos x)′ = −sin x.</p>`,
+   detail:'Notice the pay-off of Week 3: the two special limits do ALL the heavy lifting. The derivative table of trig is a direct dividend of the squeeze theorem.'},
+  {t:'ask', q:'Which two special limits make (sin x)′ = cos x come out?',
+   choices:[
+     {txt:'(sin h)/h → 1 and (1 − cos h)/h → 0',ok:true},
+     {txt:'sin h → 0 and cos h → 1 alone',ok:false},
+     {txt:'L’Hôpital’s rule',ok:false}],
+   ok:'Both appear after regrouping with the addition formula. L’Hôpital is a later tool — we did it from Week-3 limits.',
+   fb:'Look at the two coefficients of sin x and cos x in the regrouped quotient.'},
+  {t:'say', html:`<p><b>The full six — every trig derivative from two seeds and the quotient rule:</b></p>
+   <div class="formula">(sin x)′ = cos x &nbsp; (cos x)′ = −sin x<br>
+   (tan x)′ = sec²x &nbsp; (cot x)′ = −csc²x<br>
+   (sec x)′ = sec x tan x &nbsp; (csc x)′ = −csc x cot x</div>
+   <p><b>Memory patterns:</b> "co-" functions (cos, cot, csc) take a MINUS sign; tan pairs with sec, cot pairs with csc.</p>`,
+   detail:'Derivation for tan: (sin/cos)′ = (cos·cos − sin·(−sin))/cos² = (cos² + sin²)/cos² = 1/cos² = sec². The Pythagorean identity collapses the numerator — the same collapse happens in every row.'},
+  {t:'ask', q:'Why is tan x strictly increasing on every branch of its domain?',
+   choices:[
+     {txt:'(tan x)′ = sec²x > 0 wherever tan exists',ok:true},
+     {txt:'tan has no asymptotes',ok:false},
+     {txt:'Its derivative is always 1',ok:false}],
+   ok:'sec² = 1/cos² is a square, hence positive everywhere the function exists — positive derivative means increasing.',
+   fb:'Sign of the derivative decides monotonicity (§3.2).'},
+  {t:'ask', q:'Drill (a): y = x² tan x. Product rule gives…',
+   choices:[
+     {txt:'2x tan x + x² sec²x',ok:true},
+     {txt:'2x sec²x',ok:false},
+     {txt:'x² sec²x',ok:false}],
+   ok:'u′v + uv′ with u = x², v = tan x. Trig derivative only touches its own factor.',
+   fb:'Differentiate x² first, then tan x — one per term.'},
+  {t:'ask', q:'Drill (b), Homework B4: y = sin x / x. Quotient rule (u = sin x, v = x):',
+   choices:[
+     {txt:'(x cos x − sin x)/x²',ok:true},
+     {txt:'cos x / 1 = cos x',ok:false},
+     {txt:'(x sin x − cos x)/x²',ok:false}],
+   ok:'u′v − uv′ = cos x·x − sin x·1 over x². Note the denominator x is not trigonometric — the rule still applies.',
+   fb:'(u′v − uv′)/v²; (x)′ = 1.'},
+  {t:'say', html:`<p><b>Simple harmonic motion</b> <span class="zh">简谐运动</span> — when a = −ω²x.</p>
+   <div class="formula">x(t) = A cos(ωt + φ)<br>
+   v(t) = −Aω sin(ωt + φ)<br>
+   a(t) = −Aω² cos(ωt + φ) = −ω² x(t)</div>
+   <p>Acceleration proportional to displacement, oppositely directed: Hooke's law. Reading the cycle — at endpoints x = ±A: v = 0, |a| maximal, pointing inward; crossing equilibrium x = 0: |v| maximal, a = 0.</p>`,
+   detail:'Differentiation rotates a sinusoid by a quarter period: x, v, a are the same wave shifted in phase. Watch balance wheels, swaying skyscrapers, guitar strings, vibrating molecules and LC circuits all obey x″ = −ω²x — solve it once, solve a thousand devices.'},
+  {t:'ask', q:'An oscillator x(t) = A cos(ωt + φ) passes through equilibrium x = 0. At that instant…',
+   choices:[
+     {txt:'|v| is maximal and a = 0',ok:true},
+     {txt:'v = 0 and |a| is maximal',ok:false},
+     {txt:'v = 0 and a = 0',ok:false}],
+   ok:'Zero displacement ⇒ a = −ω²·0 = 0; the sine factor of v is ±1 there ⇒ top speed. At the endpoints the roles reverse.',
+   fb:'Read the three formulas at cos = 0 (equilibrium).'},
+  {t:'recap', title:'§3.5 Takeaways', mn:'Two seeds (sin→cos, cos→−sin) plus the quotient rule grow all six; “co-” carries a minus. Harmonic motion satisfies a = −ω²x.',
+   items:['(sin x)′ = cos x, (cos x)′ = −sin x — radians only',
+          'Proof tools: sin(x+h) addition formula + the two §2.4 limits',
+          '(tan x)′ = sec²x, (cot x)′ = −csc²x, (sec x)′ = sec x tan x, (csc x)′ = −csc x cot x',
+          'co-functions take the minus; tan↔sec and cot↔csc pair up',
+          '4-cycle: sin → cos → −sin → −cos → sin',
+          'SHM: x = A cos(ωt+φ) ⇒ a = −ω²x; endpoints v=0, equilibrium |v| max']}
+]},
+
+/* ---------------- §3.6 ---------------- */
+{title:'§3.6 The Chain Rule', steps:[
+  {t:'say', html:`<p>Nature prefers <b>nesting</b> to arithmetic. Ripple area A = πr² with radius r = r(t) gives A = π[r(t)]² — area nested in time. The chain rule unpacks such compositions.</p>
+   <div class="formula">d/dx f(g(x)) = f′(g(x)) · g′(x)</div>
+   <p><b>Differentiate the OUTSIDE, keep the inside; then multiply by the derivative of the inside.</b> In Leibniz form, with y = f(u), u = g(x):</p>
+   <div class="formula">dy/dx = dy/du · du/dx</div>`,
+   detail:'The du\'s "cancel" like fractions — not a rigorous proof (the rigorous argument handles points where Δu can vanish), but an infallible memory device. This elegance is why dy/dx won the notation war.'},
+  {t:'say', html:`<p><b>Gear-train intuition — rates multiply.</b> y changes 3 per unit of u; u changes 2 per unit of x. One unit of x moves u by 2, which moves y by 3 × 2 = 6. Every stage scales the previous one — multiplication, not addition.</p>
+   <p><b>Standard procedure:</b> ① name the outer f and inner g; ② differentiate the outer LEAVING THE INNER UNTOUCHED: f′(g(x)); ③ multiply by the inner derivative g′(x); ④ simplify — but never "simplify" by differentiating the inside too early.</p>`,
+   detail:'Warm-up from the lecture: y = (3x² + 1)¹⁰. Expanding is madness; nesting is one line — outside u¹⁰, inside u = 3x² + 1: y′ = 10u⁹·6x = 60x(3x² + 1)⁹.'},
+  {t:'ask', q:'y = (3x² + 1)¹⁰. Outer u¹⁰, inner u = 3x² + 1. y′ = ?',
+   choices:[
+     {txt:'10(3x²+1)⁹ · 6x = 60x(3x²+1)⁹',ok:true},
+     {txt:'10(3x²+1)⁹',ok:false},
+     {txt:'10(6x)⁹',ok:false}],
+   ok:'Outer derivative 10u⁹ with the inner untouched, TIMES inner derivative 6x. Dropping the 6x is the #1 chain-rule error.',
+   h2:'Two factors: the derivative of the shell, then the derivative of the filling.',
+   scaffold:[
+    {q:'d/du (u¹⁰) =',choices:[{txt:'10u⁹',ok:true},{txt:'10u',ok:false}],
+     fb:'Power rule.',oktxt:'10u⁹.'},
+    {q:'d/dx (3x² + 1) =',choices:[{txt:'6x',ok:true},{txt:'3x²',ok:false}],
+     fb:'Differentiate the filling.',oktxt:'6x — multiply the factors.'}
+   ]},
+  {t:'say', html:`<p><b>Worked examples — peel outward in, one factor per layer.</b></p>
+   <ul class="recap"><li>sin(5x): cos(5x) · 5 = 5 cos(5x)</li>
+   <li>√(x²+1) = (x²+1)^(1/2): ½(x²+1)^(−1/2) · 2x = x/√(x²+1)</li>
+   <li>sin²x = (sin x)²: 2 sin x · cos x = sin 2x</li>
+   <li>cos³(2x) = [cos(2x)]³ — THREE layers: 3 cos²(2x) · (−sin(2x)) · 2 = −6 cos²(2x) sin(2x)</li></ul>
+   <p>Generalised: d/dx(uⁿ) = n uⁿ⁻¹ u′; d/dx sin u = cos u · u′; same pattern for cos and tan.</p>`,
+   detail:'Self-check habit: your answer should contain the inner function\'s derivative exactly ONCE per nesting layer. For cos³(2x) that is two inner derivatives (−sin(2x) and the factor 2) plus the outer 3 — three layers, three factors.'},
+  {t:'ask', q:'[(4x − 3)⁹]′ = ? (lecture drill a)',
+   choices:[
+     {txt:'9(4x−3)⁸ · 4 = 36(4x−3)⁸',ok:true},
+     {txt:'9(4x−3)⁸',ok:false},
+     {txt:'36(4x)⁸',ok:false}],
+   ok:'Shell derivative 9u⁸, inner derivative 4 — never forget the 4.',
+   fb:'n uⁿ⁻¹ u′ with u = 4x−3.'},
+  {t:'ask', q:'[1/(x² + 1)]′ — rewrite as (x²+1)⁻¹ first:',
+   choices:[
+     {txt:'−(x²+1)⁻² · 2x = −2x/(x²+1)²',ok:true},
+     {txt:'−1·(2x)⁻²',ok:false},
+     {txt:'2x/(x²+1)²',ok:false}],
+   ok:'Negative exponent gives the minus; chain gives the 2x. Sign AND chain in one problem.',
+   fb:'d/du (u⁻¹) = −u⁻²; multiply by u′ = 2x.'},
+  {t:'ask', q:'[tan(3x²)]′ = ? (drill c)',
+   choices:[
+     {txt:'sec²(3x²) · 6x = 6x sec²(3x²)',ok:true},
+     {txt:'sec²(3x²)',ok:false},
+     {txt:'6x sec²(x²)',ok:false}],
+   ok:'Trig shell: sec² keeps the full inner 3x²; then the inner derivative 6x multiplies.',
+   fb:'(tan u)′ = sec²u · u′.'},
+  {t:'say', html:`<p><b>Real chain — how fast does a ripple swallow the pond?</b> Radius grows at dr/dt = 0.5 m/s, A = πr²:</p>
+   <div class="formula">dA/dt = dA/dr · dr/dt = 2πr · 0.5 = πr; at r = 2 m: dA/dt = 2π ≈ 6.28 m²/s</div>
+   <p>The surprise: wave speed is constant yet dA/dt GROWS with r — a bigger circle has a longer edge, so the same outward creep paints area faster. Same skeleton: oil slick dA/dt = 2πr·dr/dt, balloon dV/dt = 4πr²·dr/dt — full treatment in §3.8.</p>`,
+   detail:'Each stage of a chain can vary with position. The chain rule multiplies instantaneous rates; it does not assume any of them are constant.'},
+  {t:'say', html:`<p><b>Four ways the chain rule goes wrong:</b></p>
+   <ul class="recap"><li><b>1 · Dropping u′:</b> [sin(5x)]′ = cos(5x) ✗ — missing the 5. Most common casualty in all of differentiation.</li>
+   <li><b>2 · Layer swap:</b> sin²x ≠ sin(x²). First gives 2 sin x cos x; second gives 2x cos(x²). Parentheses decide the outside.</li>
+   <li><b>3 · Nesting u′:</b> the factor u′ multiplies at the OUTER level — it is never itself raised to the −1/2.</li>
+   <li><b>4 · Product vs composition:</b> x·sin(2x) needs BOTH rules: sin(2x) + x·cos(2x)·2.</li></ul>`,
+   detail:'Structure check first: is x multiplied in, or composed in? A centered dot means product; parentheses-within-function means composition. Many exam problems mix the two on purpose.'},
+  {t:'ask', q:'y = x sin(2x). Which rule(s)?',
+   choices:[
+     {txt:'Product rule, with the chain rule on sin(2x): sin(2x) + 2x cos(2x)',ok:true},
+     {txt:'Chain rule only: 2x cos(2x)',ok:false},
+     {txt:'Product rule only: 1·cos(2x)',ok:false}],
+   ok:'x and sin(2x) are MULTIPLIED (product), and 2x is COMPOSED in the sine (chain). Both rules, in order.',
+   fb:'Read the structure: is there a factor sitting outside the sine?'},
+  {t:'recap', title:'§3.6 Takeaways', mn:'Rates multiply along the chain: shell derivative with filling untouched, times u′ — once per layer. Mixed problems need a structure check first.',
+   items:['(f∘g)′(x) = f′(g(x))·g′(x); dy/dx = dy/du · du/dx',
+          'Power-trig upgrade: (uⁿ)′ = n uⁿ⁻¹ u′, (sin u)′ = cos u · u′, …',
+          'Triple nests contribute three factors (cos³(2x))',
+          'Pitfalls: dropped u′, sin²x vs sin(x²), nesting u′ in a power',
+          'A centered dot = product; parentheses inside a call = composition',
+          'Related rates (§3.8) are the chain rule plus bookkeeping']}
+]},
+
+/* ---------------- §3.7 ---------------- */
+{title:'§3.7 Implicit Differentiation', steps:[
+  {t:'say', html:`<p>Some curves refuse to be functions: the circle x² + y² = 25 solves to y = ±√(25 − x²) — two functions, awkward radicals; the folium x³ + y³ = 6xy cannot be solved for y by elementary algebra at all. Yet both clearly have tangent lines.</p>
+   <p>An equation F(x, y) = 0 defines y <b>implicitly</b> <span class="zh">隐函数</span> wherever each x picks out a unique nearby y. The idea in one sentence:</p>
+   <div class="formula">Differentiate both sides w.r.t. x, treating y as y(x); the chain rule turns every y-term into y′-terms; then solve for y′.</div>`,
+   detail:'Where implicit curves rule: conics (circle, ellipse, hyperbola — optics uses an ellipse\'s reflection property), and economics\' indifference curves, whose slopes are marginal rates of substitution.'},
+  {t:'say', html:`<p><b>The three steps on the circle.</b></p>
+   <p>① Differentiate both sides in x: d/dx(x²) + d/dx(y²) = 0, so 2x + ?</p>
+   <p>② Chain rule on every y — think of y as y(x): d/dx(y²) = 2y · dy/dx = 2y y′. Hence 2x + 2y y′ = 0.</p>
+   <p>③ Solve for y′: <b>y′ = −x/y</b> — slope expressed in BOTH coordinates.</p>
+   <p class="mn">Mantra: "Meet y, differentiate, multiply by y′." Powers: (yⁿ)′ = n yⁿ⁻¹ y′; products: (xy)′ = y + x y′.</p>`,
+   detail:'Cross-check with the explicit upper semicircle y = √(25−x²): its derivative is −x/√(25−x²) = −x/y — same answer in three fewer lines, and the implicit version handles BOTH semicircles at once.'},
+  {t:'ask', q:'d/dx (y³) when y is a hidden function of x?',
+   choices:[
+     {txt:'3y² y′ — power rule, then a chain-rule factor y′',ok:true},
+     {txt:'3y² only',ok:false},
+     {txt:'3y² · x',ok:false}],
+   ok:'Every y-term donates a y′. Forgetting it is the implicit-differentiation twin of dropping u′.',
+   fb:'(yⁿ)′ = n yⁿ⁻¹ times what, by the chain rule?'},
+  {t:'say', html:`<p><b>Worked example — tangent AND normal to the circle at (3, 4).</b></p>
+   <div class="formula">y′ = −x/y ⇒ m<sub>tan</sub> = −3/4<br>
+   Tangent: y − 4 = −(3/4)(x − 3) ⇒ 3x + 4y = 25<br>
+   Normal: m = 4/3, line y − 4 = (4/3)(x − 3) ⇒ 4x − 3y = 0</div>
+   <p>The normal passes through the ORIGIN — the circle's center. This re-proves Euclid III.16 in one line: a circle's tangent is perpendicular to its radius.</p>`,
+   detail:'Your-turn ellipse: x²/9 + y²/4 = 1 gives 2x/9 + (2y/4)y′ = 0 ⇒ y′ = −4x/(9y); at (3/√2, √2) the slope is −2/3.'},
+  {t:'ask', q:'Tangent to x² + y² = 25 at (3, 4): its slope is…',
+   choices:[
+     {txt:'−3/4',ok:true},
+     {txt:'−4/3',ok:false},
+     {txt:'3/4',ok:false}],
+   ok:'−x/y at the point = −3/4. (4/3 is the NORMAL — don\'t swap them.)',
+   fb:'Substitute x = 3, y = 4 into y′ = −x/y.'},
+  {t:'say', html:`<p><b>The folium of Descartes</b> x³ + y³ = 6xy — the curve that started a feud (Descartes challenged the world to its tangents; Fermat picked the lock in days).</p>
+   <p>Differentiate implicitly:</p>
+   <div class="formula">3x² + 3y²y′ = 6y + 6xy′ ⇒ y′ = (2y − x²)/(y² − 2x)</div>
+   <ul class="recap"><li><b>Leaf tip:</b> numerator 2y − x² = 0 ⇒ horizontal tangent.</li>
+   <li><b>Origin:</b> numerator and denominator BOTH vanish ⇒ y′ undefined — the curve self-crosses with two tangents.</li>
+   <li><b>Asymptote:</b> x + y = −2 far from the leaf.</li></ul>`,
+   detail:'No solving for y was ever needed: differentiate FIRST, solve for y′ AFTER. That ordering is the entire method — and exactly what made Fermat fast in 1638.'},
+  {t:'ask', q:'On the folium, a HORIZONTAL tangent requires y′ = 0, which happens when…',
+   choices:[
+     {txt:'The numerator 2y − x² = 0 (while the denominator is nonzero)',ok:true},
+     {txt:'The denominator y² − 2x = 0',ok:false},
+     {txt:'x = y = 0',ok:false}],
+   ok:'A fraction is zero when its numerator is zero (denominator finite). Denominator zero instead signals a VERTICAL tangent.',
+   fb:'Zero numerator vs zero denominator — which gives a level tangent?'},
+  {t:'say', html:`<p><b>Drill 1 — product and power together:</b> xy + y² = 1.</p>
+   <div class="formula">y + x y′ + 2y y′ = 0 ⇒ y′(x + 2y) = −y ⇒ y′ = −y/(x + 2y)</div>
+   <p>Two y′-terms, collected and solved like a linear equation in y′.</p>
+   <p><b>Drill 2 — trig composition:</b> sin(xy) = x gives cos(xy)(y + x y′) = 1 ⇒ y′ = (sec(xy) − y)/x. The chain rule unwraps sin; the product rule unpacks xy — both rules in one breath.</p>`,
+   detail:'Level-up (second derivatives): from y′ = −x/y on the circle, quotient rule gives y″ = −(y − x y′)/y²; substitute y′ = −x/y and then x²+y² = 25 to reach y″ = −25/y³. The original equation supplies the final simplification — keep F(x,y) = 0 on your desk until the last line.'},
+  {t:'ask', q:'For xy + y² = 1, after differentiating you hold y + x y′ + 2y y′ = 0. Solving for y′:',
+   choices:[
+     {txt:'−y/(x + 2y)',ok:true},
+     {txt:'−y/x',ok:false},
+     {txt:'−(x + 2y)/y',ok:false}],
+   ok:'Collect: y′(x + 2y) = −y, then divide. Gather every y′ term on one side first.',
+   fb:'Factor y′ out of the two terms that contain it.'},
+  {t:'recap', title:'§3.7 Takeaways', mn:'Never solve for y: differentiate both sides, chain-rule a y′ onto every y-term, collect, and solve. On a circle the normal goes through the center.',
+   items:['F(x,y) = 0 defines y implicitly — differentiable without solving',
+          'Three steps: differentiate in x → y-terms gain y′ → solve for y′',
+          'Mantra: (yⁿ)′ = n yⁿ⁻¹ y′; (xy)′ = y + x y′',
+          'Circle x²+y² = r² ⇒ y′ = −x/y; tangent ⟂ radius',
+          'Folium: y′ = (2y−x²)/(y²−2x); num=0 horizontal, den=0 vertical',
+          'Second derivative: re-substitute y′, then simplify with F(x,y) = 0']}
+]},
+
+/* ---------------- §3.8 ---------------- */
+{title:'§3.8 Related Rates', steps:[
+  {t:'say', html:`<p>Several quantities change at once, linked by one equation; given some rates, find another. Three classic scenes:</p>
+   <ul class="recap"><li><b>Balloon:</b> air flows at known dV/dt — how fast does r grow? Link V = (4/3)πr³.</li>
+   <li><b>Sliding ladder:</b> foot moves at dx/dt — how fast does the top drop? Link x² + y² = L².</li>
+   <li><b>Conical tank:</b> water enters at dV/dt — how fast does h rise? Volume + similar triangles.</li></ul>
+   <p>Toolkit: implicit differentiation (§3.7), the chain rule (§3.6) — every variable donates a d·/dt factor — and geometry formulas.</p>`,
+   detail:'Real users of this pattern: oil-response teams estimating slick growth, anesthesiologists tracking drug concentration during infusion, engineers computing reservoir rise in a storm. One pattern: equation linking quantities, differentiated in TIME.'},
+  {t:'say', html:`<p><b>The six-step strategy:</b></p>
+   <ul class="recap"><li><b>1 · Draw and label</b> every time-varying quantity.</li>
+   <li><b>2 · List rates with signs</b> (increasing +, decreasing −).</li>
+   <li><b>3 · Link the variables</b> (Pythagoras, similar triangles, area/volume).</li>
+   <li><b>4 · Differentiate in t</b> — every variable donates its rate.</li>
+   <li><b>5 · Substitute, THEN solve</b>.</li>
+   <li><b>6 · Audit</b> units and sign.</li></ul>`,
+   detail:'THE FATAL SWAP: substituting the instant\'s values BEFORE differentiating freezes variables into constants — their derivatives become 0 and the rate equation collapses. Differentiate FIRST, substitute SECOND. This one ordering error causes most lost points in related rates.'},
+  {t:'ask', q:'Why must you differentiate the linking equation BEFORE plugging in r = 25?',
+   choices:[
+     {txt:'Plugging in early turns r into the constant 25, and d/dt(25) = 0 — the rate vanishes',ok:true},
+     {txt:'Numbers are harder to differentiate than letters',ok:false},
+     {txt:'The constant rule only applies after step 6',ok:false}],
+   ok:'Variables carry rates; constants do not. Keep letters alive until after differentiation.',
+   fb:'What is d/dt of a fixed number?'},
+  {t:'say', html:`<p><b>Classic 1 — the balloon (lecture numbers).</b> dV/dt = 100 cm³/s, find dr/dt at r = 25 cm.</p>
+   <div class="formula">V = (4/3)πr³ ⇒ dV/dt = 4πr² dr/dt<br>
+   100 = 4π(25)² dr/dt ⇒ dr/dt = 1/(25π) ≈ 0.0127 cm/s</div>
+   <p>Plausibility: a 25-cm balloon has enormous surface area; 100 cm³/s spreads into a skin about a hundredth of a cm thick. Slow radius, fast volume. Deflating at 50 cm³/s changes ONLY the sign: dV/dt = −50.</p>`,
+   detail:'A gem in the algebra: dV/dr = 4πr² = surface area; dA/dr = 2πr = circumference. Differentiating volume with respect to radius returns surface area — the Fundamental Theorem in geometric disguise (integration explains why).'},
+  {t:'ask', q:'Homework B9: the balloon DEFLATES at 50 cm³/s. dr/dt at r = 10 cm?',
+   choices:[
+     {txt:'−50/(4π·100) = −1/(8π) cm/s (negative = shrinking)',ok:true},
+     {txt:'+1/(8π) cm/s',ok:false},
+     {txt:'−50/10 = −5 cm/s',ok:false}],
+   ok:'−50 = 4π(10)² dr/dt = 400π dr/dt ⇒ −1/(8π). Negative sign is the whole physical story — radius decreasing.',
+   h2:'Same differentiated equation, negative dV/dt.',
+   scaffold:[
+    {q:'4πr² at r = 10 is…',choices:[{txt:'4π·100 = 400π',ok:true},{txt:'4π·10 = 40π',ok:false}],
+     fb:'Square the radius.',oktxt:'400π.'},
+    {q:'dr/dt = −50 / 400π =',choices:[{txt:'−1/(8π)',ok:true},{txt:'−1/(4π)',ok:false}],
+     fb:'−50/400 simplifies to −1/8.',oktxt:'−1/(8π) cm/s.'}
+   ]},
+  {t:'say', html:`<p><b>Classic 2 — the sliding ladder.</b> A 5 m ladder's foot is pulled from the wall at 1 m/s; how fast does the top descend at height 3 m?</p>
+   <div class="formula">x² + y² = 25 ⇒ 2x dx/dt + 2y dy/dt = 0<br>
+   At y = 3: x = 4 (a 3-4-5 triangle); 2(4)(1) + 2(3) dy/dt = 0<br>
+   dy/dt = −4/3 ≈ −1.33 m/s</div>
+   <p>Audit: negative = descending; magnitude &gt; 1 = the top OUTRUNS the foot — the shallow angle amplifies vertical motion like a lever. As y → 0 the ratio x/y explodes.</p>`,
+   detail:'Notice substitution happens only on the differentiated line — x = 4 and y = 3 are plugged into 2x ẋ + 2y ẏ = 0, never into x² + y² = 25 before differentiating.'},
+  {t:'ask', q:'At the instant y = 3 on the 5 m ladder, what is x (needed before substitution)?',
+   choices:[
+     {txt:'x = 4, since x² + 9 = 25 ⇒ x² = 16',ok:true},
+     {txt:'x = 5',ok:false},
+     {txt:'x = 3',ok:false}],
+   ok:'3-4-5 triangle: x = √(25 − 9) = 4. Geometry supplies the missing coordinate.',
+   fb:'Pythagoras with y = 3.'},
+  {t:'say', html:`<p><b>Classic 3 — the conical tank: eliminate FIRST, then differentiate.</b> Inverted cone, H = 4 m, top radius R = 2 m; fills at 2 m³/s; find dh/dt at h = 3 m.</p>
+   <div class="formula">Similar triangles: r/h = 2/4 ⇒ r = h/2<br>
+   V = (1/3)πr²h = (1/3)π(h/2)²h = πh³/12<br>
+   dV/dt = (πh²/4) dh/dt; at h = 3: 2 = 9π/4 · dh/dt ⇒ dh/dt = 8/(9π) ≈ 0.283 m/s</div>
+   <p>Intuition: dh/dt ∝ 1/h² — a widening cone fills more slowly as it deepens.</p>`,
+   detail:'Leaving both r and h in V and differentiating gives a dr/dt term you do not know. Similar triangles eliminate r for h BEFORE differentiation, reducing to the one rate you are asked about.'},
+  {t:'ask', q:'Challenge C3: the SAME cone leaks at dV/dt = −0.5 m³/h. dh/dt at h = 2 m?',
+   choices:[
+     {txt:'−0.5 = π(2²)/4 · dh/dt = π dh/dt ⇒ −1/(2π) m/h',ok:true},
+     {txt:'+1/(2π) m/h',ok:false},
+     {txt:'−0.5/2 = −0.25 m/h',ok:false}],
+   ok:'At h = 2 the coefficient πh²/4 = π exactly; negative dV/dt forces dh/dt &lt; 0 — the level drops at 1/(2π) m/h.',
+   h2:'Reuse dV/dt = (πh²/4) dh/dt from the filling example.',
+   scaffold:[
+    {q:'πh²/4 at h = 2 is…',choices:[{txt:'π·4/4 = π',ok:true},{txt:'π·2/4 = π/2',ok:false}],
+     fb:'Square h first.',oktxt:'π.'},
+    {q:'−0.5 = π dh/dt ⇒ dh/dt =',choices:[{txt:'−1/(2π)',ok:true},{txt:'−2π',ok:false}],
+     fb:'Divide by π and keep the sign.',oktxt:'−1/(2π) m/h.'}
+   ]},
+  {t:'recap', title:'§3.8 Takeaways', mn:'Draw, sign the rates, link the variables, differentiate in t, substitute only after, audit sign and units. Cones: eliminate with similar triangles first.',
+   items:['Six steps: draw → signed rates → link → d/dt → substitute → audit',
+          'Fatal error: substituting before differentiating (rates become 0)',
+          'Balloon: dV/dt = 4πr² dr/dt; deflation only flips the sign',
+          'Ladder: x² + y² = L² ⇒ x ẋ + y ẏ = 0 (watch the −)',
+          'Cone: r = h/2, V = πh³/12, dV/dt = (πh²/4) dh/dt',
+          'Audit: sinking tops and leaking tanks need NEGATIVE rates']}
+]},
+
+/* ---------------- §3.9 ---------------- */
+{title:'§3.9 Linearization & Differentials', steps:[
+  {t:'say', html:`<p><b>Zoom in far enough and every smooth curve is a line.</b> Magnify a graph 10×, 100×, 1000× near a point: it flattens into its own tangent. The Earth is a sphere, yet your sports field is flat — small windows hide curvature.</p>
+   <p>Differentiability means exactly this: locally, the curve admits a BEST LINEAR STAND-IN.</p>
+   <div class="formula">L(x) = f(a) + f′(a)(x − a), &nbsp;&nbsp; f(x) ≈ L(x) near a</div>`,
+   detail:'The seed of numerical methods, differential equations and error analysis: replace nonlinear by linear, locally. Before calculators, engineers estimated √4.04 and sin(0.1) by hand from an anchor point and a derivative; your phone chip still does this millions of times per second.'},
+  {t:'say', html:`<p><b>Worked example — √4.04 to five digits by hand.</b></p>
+   <div class="formula">Anchor f(x) = √x at a = 4: f(4) = 2 exactly<br>
+   f′(x) = 1/(2√x) ⇒ f′(4) = 1/4<br>
+   L(x) = 2 + (1/4)(x − 4)<br>
+   L(4.04) = 2 + (1/4)(0.04) = 2.01</div>
+   <p>True value √4.04 ≈ 2.00998 — the estimate misses by 2 × 10⁻⁵. Three lines of arithmetic buy five significant digits.</p>`,
+   detail:'Pick the anchor a where f AND f′ are both easy exact values, and close to the target. "Nearby exact point + one derivative" is the whole craft.'},
+  {t:'input', q:'Use L(x) = 2 + (x − 4)/4 to estimate √4.04. L(4.04) = ? (two decimals)',
+   accept:v=>{const n=parseFloat(norm(v));return !isNaN(n)&&Math.abs(n-2.01)<1e-9;},
+   fb:'(4.04 − 4)/4 = 0.01; add to the anchor value 2.',
+   reveal:'2 + 0.01 = 2.01 (true 2.00998…).',
+   placeholder:'e.g. 2.01'},
+  {t:'say', html:`<p><b>Over or under? Read the bend</b> <span class="zh">高估 / 低估</span>.</p>
+   <ul class="recap"><li>f″ &gt; 0 (bends UP, cup ∪): tangent lies BELOW the curve ⇒ L <b>underestimates</b>.</li>
+   <li>f″ &lt; 0 (bends DOWN, cap ∩): tangent lies ABOVE the curve ⇒ L <b>overestimates</b>.</li></ul>
+   <p>√x has f″(x) = −1/(4x^(3/2)) &lt; 0, so 2.01 is slightly HIGH — matching the true 2.00998.</p>`,
+   detail:'This is a first taste of Chapter 4: concavity decides the sign of the linearization error. You do not need the true value to know the direction of the error.'},
+  {t:'ask', q:'Estimate sin(0.1) with anchor a = 0: L(x) = sin 0 + cos 0 ·(x − 0) = x, so L(0.1) = 0.1. Near 0, sin x bends DOWN (sin″ = −sin < 0). The estimate is…',
+   choices:[
+     {txt:'A slight OVERESTIMATE (tangent above the curve)',ok:true},
+     {txt:'A slight UNDERESTIMATE',ok:false},
+     {txt:'Exactly equal for all x',ok:false}],
+   ok:'f″ &lt; 0 ⇒ overestimate. Indeed sin(0.1) ≈ 0.09983 &lt; 0.1 — the direction is knowable without the true value.',
+   fb:'Cap-shaped bend: where does its tangent sit?'},
+  {t:'widget', id:'linz',
+   html:`<p>Zoom lab. Pick a function and an anchor, then zoom 1× → 0.1× → 0.01×. Watch the blue curve collapse onto its green tangent while the error readout dives toward zero. This is differentiability you can SEE.</p>`},
+  {t:'say', html:`<p><b>Differentials</b> <span class="zh">微分</span> — dy versus Δy.</p>
+   <div class="formula">Δy = f(x + Δx) − f(x) — the TRUE change, on the curve<br>
+   dy = f′(x) dx — the change on the TANGENT (with dx = Δx)</div>
+   <p>The error Δy − dy vanishes FASTER than dx: Δy = dy + ε·dx with ε → 0. That statement IS the definition of differentiable. With dy = f′ dx defined, dy/dx becomes a genuine quotient — the chain rule's "cancellation" is honest algebra, not just a mnemonic.</p>`,
+   detail:'Two changes on the zoom-lab picture: the true rise follows the curve (Δy), the predicted rise follows the tangent (dy). The gap between them is the curvature tax, and it shrinks quadratically as dx → 0.'},
+  {t:'say', html:`<p><b>Error propagation — the derivative as a magnifier.</b> Input error dx passes through f as</p>
+   <div class="formula">df = f′(x) dx — the derivative is the magnification factor</div>
+   <p>Lecture sphere: diameter d = 20 ± 0.05 cm, V = πd³/6. dV = (πd²/2) dd = (π·400/2)(±0.05) = ±10π ≈ ±31.4 cm³. In relative terms:</p>
+   <div class="formula">dV/V = 3 dd/d — the volume's relative error is THREE times the diameter's</div>
+   <p><b>Power rule of errors:</b> for y = xⁿ, dy/y = n · dx/x. Cubed quantities TRIPLE relative error — measure them most carefully.</p>`,
+   detail:'Vocabulary: absolute |df|, relative df/f, percentage 100·df/f, propagated error after the formula, sensitivity = the derivative doing the amplifying. Used in manufacturing tolerances, aerospace fuel margins, pharmacy dosing and civil load factors.'},
+  {t:'ask', q:'A side length x of a cube is measured with 0.2% relative error. The computed VOLUME V = x³ has relative error approximately…',
+   choices:[
+     {txt:'3 × 0.2% = 0.6%',ok:true},
+     {txt:'0.2%',ok:false},
+     {txt:'0.008% (cubed)',ok:false}],
+   ok:'dy/y = n dx/x with n = 3. Powers MULTIPLY relative errors — you do not cube 0.2%.',
+   fb:'Log-differentiate V = x³: dV/V = 3 dx/x.'},
+  {t:'ask', q:'A drug dose is computed as D = k·r² from measured radius r, with r known to ±1%. The uncertainty in D is about…',
+   choices:[
+     {txt:'±2%',ok:true},
+     {txt:'±1%',ok:false},
+     {txt:'±0.5%',ok:false}],
+   ok:'D is proportional to the SECOND power, so relative error doubles: 2 × 1% = 2%. Sensitivity analysis in one line.',
+   fb:'n = 2 in the power rule of errors.'},
+  {t:'recap', title:'§3.9 Takeaways', mn:'Differentiable = locally straight: L(x) = f(a) + f′(a)(x−a). f″ signs the error; differentials magnify input error by f′, powers by n.',
+   items:['Linearization L(x) = f(a) + f′(a)(x−a); choose an anchor exact in f and f′',
+          '√4.04 ≈ 2.01 via L(x) = 2 + (x−4)/4',
+          'f″ > 0 underestimate; f″ < 0 overestimate',
+          'dy = f′(x) dx ≈ Δy; error ε·dx with ε → 0',
+          'Error propagation: df = f′ dx; power rule dy/y = n dx/x',
+          'Absolute, relative (df/f) and percentage (100 df/f) error']}
 ]}
 ];
 
@@ -1464,6 +2163,208 @@ const HW=[
    choices:[{txt:'Opposite signs — IVT forces a zero between them',ok:true},{txt:'The same sign — nothing follows',ok:false},{txt:'Both zero already',ok:false}],
    ok:'g is continuous on [0, 180°] and g(180°) = −g(0): a sign change ⇒ some θ* has g(θ*) = 0.'},
   {t:'say', html:`<p>At θ*: T(θ*) = T(θ* + 180°) — two antipodal points share the same temperature. A fact about the real world proved from <b>continuity + IVT</b> alone: the globe cannot be strictly warmer than its antipode everywhere.</p>`}
+ ]},
+
+/* ---- Chapter 3 · Homework B: derivatives ---- */
+{id:'c3h1',badge:'Q1 · §3.1 · 10 pts',
+ stmt:'From the definition, differentiate f(x) = x² − 3x. (B1)',
+ steps:[
+  {t:'say', html:`<p>"From the definition" means no power rule yet — build the difference quotient <span class="zh">差商</span> and take its limit:</p>
+   <div class="formula">f′(x) = lim<sub>h→0</sub> [f(x+h) − f(x)] / h</div>
+   <p>Keep x variable; h is the only thing heading to 0.</p>`},
+  {t:'ask', q:'Step 1: expand f(x+h) = (x+h)² − 3(x+h).',
+   choices:[{txt:'x² + 2xh + h² − 3x − 3h',ok:true},{txt:'x² + h² − 3x − 3h',ok:false},{txt:'x² + 2xh + h² − 3x',ok:false}],
+   ok:'Square carefully: (x+h)² = x² + 2xh + h²; distribute the −3 over BOTH terms.'},
+  {t:'ask', q:'Step 2: subtract f(x) = x² − 3x. What survives?',
+   choices:[{txt:'2xh + h² − 3h',ok:true},{txt:'2xh + h²',ok:false},{txt:'x² + 2xh + h² − 6x − 3h',ok:false}],
+   ok:'x² cancels with −x² and −3x with +3x; only terms carrying h remain.'},
+  {t:'ask', q:'Step 3: factor h out, then divide by h (h ≠ 0 on the approach):',
+   choices:[{txt:'h(2x + h − 3)/h = 2x + h − 3',ok:true},{txt:'2xh + h² − 3h',ok:false},{txt:'2x − 3h',ok:false}],
+   ok:'Every surviving term had exactly one factor h — the cancellation the hint promised.'},
+  {t:'input', q:'Step 4: f′(x) = limₕ→₀ (2x + h − 3) = ? (write the expression in x)',
+   accept:v=>{const s=norm(v).replace(/\s+/g,'').replace(/−/g,'-');return s==='2x-3';},
+   fb:'Let h → 0: only the terms without h remain.',
+   reveal:'f′(x) = 2x − 3. (Check: at x = 2 this gives 1 — the f′(2) you found in §3.1.)',
+   placeholder:'e.g. 2x-3'}
+ ]},
+{id:'c3h2',badge:'Q2 · §3.3 · 10 pts',
+ stmt:'y = 3x⁴ − 5x² + 2x − 7: find y′. Name the rule you use. (B2)',
+ steps:[
+  {t:'say', html:`<p>Structure read: a SUM of power terms and a constant. That means the <b>linearity rules</b> — differentiate term by term, signs attached.</p>
+   <div class="formula">(c xⁿ)′ = c·n xⁿ⁻¹ &nbsp;&nbsp; (constant)′ = 0</div>`},
+  {t:'ask', q:'First term: (3x⁴)′ = ?',
+   choices:[{txt:'12x³',ok:true},{txt:'7x³',ok:false},{txt:'12x⁴',ok:false}],
+   ok:'Bring down 4, multiply 3×4 = 12, drop the exponent to 3.'},
+  {t:'ask', q:'Second term: (−5x²)′ = ?',
+   choices:[{txt:'−10x',ok:true},{txt:'10x',ok:false},{txt:'−5x',ok:false}],
+   ok:'−5 × 2 = −10; the sign travels with the term.'},
+  {t:'ask', q:'The last two pieces: (2x)′ and (−7)′ = ?',
+   choices:[{txt:'2 and 0',ok:true},{txt:'2 and −7',ok:false},{txt:'0 and 0',ok:false}],
+   ok:'(x)′ = 1 gives 2; a constant never changes, so its rate is 0.'},
+  {t:'ask', q:'Assemble y′:',
+   choices:[{txt:'12x³ − 10x + 2',ok:true},{txt:'12x³ − 10x + 2 − 7',ok:false},{txt:'3x³ − 5x + 2',ok:false}],
+   ok:'The −7 vanishes completely — carrying constants into the derivative is the classic slip here.'}
+ ]},
+{id:'c3h3',badge:'Q3 · §3.3 · 15 pts',
+ stmt:'Differentiate (a) y = x² sin x; (b) y = (x² − 1)/(x² + 1). (B3)',
+ steps:[
+  {t:'say', html:`<p>Two structures in one problem: (a) is a <b>product</b> of factors; (b) is a <b>quotient</b>. Name the rule before touching the symbols.</p>`},
+  {t:'ask', q:'(a) Set u = x², v = sin x. Their derivatives (§3.5 preview: (sin x)′ = cos x) are…',
+   choices:[{txt:'u′ = 2x, v′ = cos x',ok:true},{txt:'u′ = 2x, v′ = −cos x',ok:false},{txt:'u′ = x, v′ = cos x',ok:false}],
+   ok:'Power rule on x²; sine differentiates to cosine (no minus — the minus belongs to cosine’s derivative).'},
+  {t:'ask', q:'Product rule (uv)′ = u′v + uv′ gives…',
+   choices:[{txt:'2x sin x + x² cos x',ok:true},{txt:'2x cos x',ok:false},{txt:'2x sin x · x² cos x',ok:false}],
+   ok:'Two TERMS added: derivative touches exactly one factor in each.'},
+  {t:'say', html:`<p>(b) Quotient rule <span class="zh">商的法则</span>: with u = x² − 1, v = x² + 1,</p>
+   <div class="formula">y′ = (u′v − uv′) / v²</div>
+   <p>Write all four pieces before combining.</p>`},
+  {t:'ask', q:'Here u′ = 2x and v′ = 2x. The numerator u′v − uv′ is…',
+   choices:[{txt:'2x(x²+1) − (x²−1)(2x)',ok:true},{txt:'2x(x²−1) − (x²+1)(2x)',ok:false},{txt:'2x·2x − (x²−1)(x²+1)',ok:false}],
+   ok:'u′v FIRST, minus uv′ — order fixes the sign.'},
+  {t:'ask', q:'Expand that numerator: the x³ terms cancel. What remains?',
+   choices:[{txt:'4x',ok:true},{txt:'2x³ + 4x',ok:false},{txt:'0',ok:false}],
+   ok:'2x³ + 2x − 2x³ + 2x = 4x. The hint said the cubic terms cancel — they do.'},
+  {t:'ask', q:'So the final answer is…',
+   choices:[{txt:'4x/(x² + 1)²',ok:true},{txt:'4x/(x² − 1)²',ok:false},{txt:'4x',ok:false}],
+   ok:'Square the bottom (do NOT differentiate it again): y′ = 4x/(x²+1)².'}
+ ]},
+{id:'c3h4',badge:'Q4 · §3.5 · 10 pts',
+ stmt:'y = sin x / x: find y′. (B4)',
+ steps:[
+  {t:'say', html:`<p>A trig factor divided by an algebraic one — the structure is a quotient. (You could also write sin x · x⁻¹ and combine product + chain; the quotient rule is the direct road.)</p>`},
+  {t:'ask', q:'Name u, v and their derivatives:',
+   choices:[{txt:'u = sin x, u′ = cos x; v = x, v′ = 1',ok:true},{txt:'u = x, u′ = 1; v = sin x, v′ = cos x',ok:false},{txt:'u = sin x, u′ = −cos x; v = x, v′ = 0',ok:false}],
+   ok:'Top is u, bottom is v; (sin x)′ = cos x and (x)′ = 1.'},
+  {t:'ask', q:'Apply (u′v − uv′)/v². The numerator is…',
+   choices:[{txt:'x cos x − sin x',ok:true},{txt:'cos x − sin x',ok:false},{txt:'x cos x + sin x',ok:false}],
+   ok:'cos x · x − sin x · 1 = x cos x − sin x. Note the subtraction, not addition.'},
+  {t:'input', q:'Complete y′ (denominator v²):',
+   accept:v=>{const s=norm(v).replace(/\s+/g,'').replace(/−/g,'-').replace(/²/g,'^2');
+     return s==='(xcosx-sinx)/x^2'||s==='(xcos(x)-sin(x))/x^2';},
+   fb:'Numerator you just found, over x squared.',
+   reveal:'y′ = (x cos x − sin x)/x². At x = π, that is (−π·(−1) − 0)/π² = 1/π — the function has a turning point there.',
+   placeholder:'(x cos x - sin x)/x²'}
+ ]},
+{id:'c3h5',badge:'Q5 · §3.6 · 10 pts',
+ stmt:'Chain rule: (a) [(3x² + 1)¹⁰]′; (b) [sin(5x)]′. (B5)',
+ steps:[
+  {t:'say', html:`<p>Both are <b>compositions</b> <span class="zh">复合函数</span>, not products. The chain rule: differentiate the OUTER shell with the inner left untouched, THEN multiply by the inner derivative.</p>
+   <div class="formula">[f(g(x))]′ = f′(g(x)) · g′(x)</div>`},
+  {t:'ask', q:'(a) Name outer and inner:',
+   choices:[{txt:'outer u¹⁰, inner u = 3x² + 1',ok:true},{txt:'outer 10u, inner u = 3x²',ok:false},{txt:'a product of 3x²+1 and 10',ok:false}],
+   ok:'The 10th power wraps the whole expression 3x² + 1.'},
+  {t:'ask', q:'Differentiate the shell, inner untouched: d/du (u¹⁰) = 10u⁹, giving 10(3x²+1)⁹. The inner derivative g′(x) is…',
+   choices:[{txt:'6x',ok:true},{txt:'6x + 1',ok:false},{txt:'3x²',ok:false}],
+   ok:'(3x²+1)′ = 6x; the inner constant 1 dies. This 6x is the #1 forgotten factor.'},
+  {t:'input', q:'(a) Multiply the two factors — the answer:',
+   accept:v=>{const s=norm(v).replace(/\s+/g,'').replace(/−/g,'-').replace(/⁹/g,'^9');
+     return s==='60x(3x²+1)^9'||s==='10(3x²+1)^9·6x'||s==='10(3x^2+1)^9*6x';},
+   fb:'10(3x²+1)⁹ times 6x — simplify the coefficient.',
+   reveal:'60x(3x² + 1)⁹.',
+   placeholder:'60x(3x²+1)^9'},
+  {t:'ask', q:'(b) sin(5x): outer sin u, inner u = 5x. Shell derivative cos u, inner derivative…',
+   choices:[{txt:'5, so y′ = 5 cos(5x)',ok:true},{txt:'0, so y′ = cos(5x)',ok:false},{txt:'5x, so y′ = 5x cos(5x)',ok:false}],
+   ok:'(5x)′ = 5 — the angle keeps its 5 inside cosine, and another 5 multiplies.'}
+ ]},
+{id:'c3h6',badge:'Q6 · §3.7 · 15 pts',
+ stmt:'Implicit differentiation: find the tangent to x² + y² = 25 at (3, 4). (B6)',
+ steps:[
+  {t:'say', html:`<p>The circle does not give y as a single function of x, so differentiate <b>implicitly</b> <span class="zh">隐函数求导</span>: differentiate both sides w.r.t. x; every time you differentiate a y-term, the chain rule donates a factor y′.</p>`},
+  {t:'ask', q:'Differentiate x² + y² = 25 term by term in x. d/dx(y²) = ?',
+   choices:[{txt:'2y y′ (power rule, then chain onto y(x))',ok:true},{txt:'2y',ok:false},{txt:'2y · x',ok:false}],
+   ok:'Think of y as y(x): d/dx y² = 2y·dy/dx = 2y y′.'},
+  {t:'ask', q:'So the differentiated equation is 2x + 2y y′ = 0. Solve for y′:',
+   choices:[{txt:'y′ = −x/y',ok:true},{txt:'y′ = x/y',ok:false},{txt:'y′ = −y/x',ok:false}],
+   ok:'2y y′ = −2x, then divide by 2y. The slope uses BOTH coordinates.'},
+  {t:'input', q:'Slope at the point (3, 4): y′ = ?',
+   accept:v=>{const s=norm(v).replace(/\s+/g,'').replace(/−/g,'-');return s==='-3/4'||s==='-0.75';},
+   fb:'Substitute x = 3, y = 4 into −x/y. Watch the sign.',
+   reveal:'m = −3/4. (The radius has slope 4/3; tangent and radius are perpendicular.)',
+   placeholder:'e.g. -3/4'},
+  {t:'ask', q:'Tangent line through (3, 4) with slope −3/4, written in integer form:',
+   choices:[{txt:'y − 4 = −(3/4)(x − 3) ⇒ 3x + 4y = 25',ok:true},{txt:'3x − 4y = 25',ok:false},{txt:'4x + 3y = 25',ok:false}],
+   ok:'Multiply by 4: 4y − 16 = −3x + 9 ⇒ 3x + 4y = 25. Check: 3·3 + 4·4 = 25 ✓.'}
+ ]},
+{id:'c3h7',badge:'Q7 · §3.3 · 10 pts',
+ stmt:'f(x) = x⁴: compute f′, f″, f‴ and f⁽⁴⁾. (B7)',
+ steps:[
+  {t:'say', html:`<p>Higher derivatives <span class="zh">高阶导数</span>: just differentiate the derivative. Each rung applies the power rule again — coefficient × exponent, then exponent − 1.</p>`},
+  {t:'ask', q:'Rung 1: f′(x) = ?',
+   choices:[{txt:'4x³',ok:true},{txt:'4x⁴',ok:false},{txt:'x³',ok:false}],
+   ok:'Bring down 4, exponent 4−1 = 3.'},
+  {t:'ask', q:'Rung 2: f″(x) = (4x³)′ = ?',
+   choices:[{txt:'12x²',ok:true},{txt:'7x²',ok:false},{txt:'12x³',ok:false}],
+   ok:'4 × 3 = 12; exponent 3−1 = 2.'},
+  {t:'ask', q:'Rung 3: f‴(x) = (12x²)′ = ?',
+   choices:[{txt:'24x',ok:true},{txt:'24x²',ok:false},{txt:'14x',ok:false}],
+   ok:'12 × 2 = 24; x² becomes x.'},
+  {t:'ask', q:'Rung 4: f⁽⁴⁾(x) = (24x)′ = ?',
+   choices:[{txt:'24',ok:true},{txt:'24x',ok:false},{txt:'0',ok:false}],
+   ok:'Derivative of 24x is the constant 24 — not zero yet!'},
+  {t:'ask', q:'And one more rung, f⁽⁵⁾(x) = (24)′ = ?',
+   choices:[{txt:'0 — a degree-4 polynomial runs out after 4 derivatives',ok:true},{txt:'24',ok:false},{txt:'1',ok:false}],
+   ok:'Constants differentiate to 0; every higher derivative stays 0 forever.'}
+ ]},
+{id:'c3h8',badge:'Q8 · §3.4 · 15 pts',
+ stmt:'s(t) = t³ − 6t² (metres, seconds): find v(t) and a(t); when does the particle speed up on [0, 6]? (B8)',
+ steps:[
+  {t:'say', html:`<p>Motion vocabulary: velocity is the first derivative of position, acceleration the second. "Speeding up" needs the SIGNS of both: v·a &gt; 0.</p>`},
+  {t:'ask', q:'v(t) = s′(t) = ?',
+   choices:[{txt:'3t² − 12t = 3t(t − 4)',ok:true},{txt:'3t² − 12',ok:false},{txt:'t² − 6t',ok:false}],
+   ok:'Power rule on each term; factoring 3t(t−4) prepares the sign analysis.'},
+  {t:'ask', q:'a(t) = v′(t) = ?',
+   choices:[{txt:'6t − 12 = 6(t − 2)',ok:true},{txt:'6t',ok:false},{txt:'3t² − 12',ok:false}],
+   ok:'Derivative of 3t²−12t; factor as 6(t−2).'},
+  {t:'ask', q:'Split [0,6] at every zero of v and a. The cut points are…',
+   choices:[{txt:'t = 0, 2, 4 (zeros of v at 0,4 and of a at 2)',ok:true},{txt:'t = 2 only',ok:false},{txt:'t = 0, 6',ok:false}],
+   ok:'v = 0 at t = 0, 4; a = 0 at t = 2 — three cuts make the sign table.'},
+  {t:'ask', q:'Signs on (0, 2): v = 3t(t−4) with t &gt; 0, t−4 &lt; 0; a = 6(t−2) &lt; 0. So…',
+   choices:[{txt:'v < 0 and a < 0 — SAME sign: speeding up',ok:true},{txt:'v < 0, a > 0 — slowing',ok:false},{txt:'both zero',ok:false}],
+   ok:'Two negatives: velocity points backward and acceleration pushes backward too — |v| grows.'},
+  {t:'ask', q:'Signs on (2, 4) and (4, 6]?',
+   choices:[{txt:'(2,4): v<0, a>0 — slowing; (4,6]: v>0, a>0 — speeding up',ok:true},{txt:'Both intervals: speeding up',ok:false},{txt:'Both intervals: slowing',ok:false}],
+   ok:'After t = 4 velocity turns positive while acceleration stayed positive past 2: same sign again.'},
+  {t:'say', html:`<div class="formula">Speeds up on <b>(0, 2)</b> and <b>(4, 6]</b>; slows on (2, 4); instants t = 2 and t = 4 are the switches (a = 0 or v = 0).</div>
+   <p>Written solution must show the sign table — the verdict comes from v·a, not from the position formula.</p>`}
+ ]},
+{id:'c3h9',badge:'Q9 · §3.8 · 10 pts',
+ stmt:'A spherical balloon deflates at 50 cm³/s. Find dr/dt when r = 10 cm. (B9)',
+ steps:[
+  {t:'say', html:`<p>Related rate <span class="zh">相关变化率</span>. Two quantities linked by geometry, both changing in time. Sign first: air leaves, so dV/dt = <b>−50</b> cm³/s.</p>
+   <div class="formula">V = (4/3)πr³</div>`},
+  {t:'ask', q:'CRITICAL ORDERING — when do we plug in r = 10?',
+   choices:[{txt:'Differentiate V = (4/3)πr³ in t FIRST, substitute r = 10 after',ok:true},{txt:'Plug r = 10 in first, then differentiate',ok:false},{txt:'Order does not matter',ok:false}],
+   ok:'Early substitution freezes r into the constant 10, whose time derivative is 0 — the rate would vanish.'},
+  {t:'ask', q:'Differentiate in t (chain rule on r³): dV/dt = ?',
+   choices:[{txt:'4πr² dr/dt',ok:true},{txt:'4πr²',ok:false},{txt:'(4/3)π·3r² = 4πr², no dr/dt needed',ok:false}],
+   ok:'d/dt(r³) = 3r² dr/dt; the 3 cancels the /3, leaving 4πr² dr/dt.'},
+  {t:'ask', q:'Substitute NOW: r = 10 and dV/dt = −50. The coefficient 4πr² is…',
+   choices:[{txt:'4π·100 = 400π',ok:true},{txt:'4π·10 = 40π',ok:false},{txt:'4π·1000 = 4000π',ok:false}],
+   ok:'Square the radius: 10² = 100.'},
+  {t:'input', q:'Solve −50 = 400π dr/dt. dr/dt = ? (cm/s)',
+   accept:v=>{const s=norm(v).replace(/\s+/g,'').replace(/−/g,'-');
+     return s==='-1/(8π)'||s==='-1/8π'||Math.abs((parseFloat(s.replace('π','').replace('pi',''))||NaN)+1/(8*Math.PI))<0.002;},
+   fb:'−50/400π = −1/(8π). Keep the minus.',
+   reveal:'dr/dt = −1/(8π) ≈ −0.0398 cm/s. Negative = radius shrinking; units cm/s pass the audit.',
+   placeholder:'-1/(8π)'}
+ ]},
+{id:'c3h10',badge:'Q10 · Bonus · §3.9',
+ stmt:'Linearize f(x) = √x at a = 4 and use it to estimate √4.04. Is the estimate high or low? (B10)',
+ steps:[
+  {t:'say', html:`<p>Linearization <span class="zh">线性化</span> replaces a curve near an anchor by its tangent:</p>
+   <div class="formula">L(x) = f(a) + f′(a)(x − a)</div>
+   <p>Choose a = 4 because f and f′ are both exact, easy values there.</p>`},
+  {t:'ask', q:'Anchor values: f(4) = √4 and f′(4), with f′(x) = 1/(2√x), are…',
+   choices:[{txt:'f(4) = 2, f′(4) = 1/4',ok:true},{txt:'f(4) = 2, f′(4) = 1/2',ok:false},{txt:'f(4) = 4, f′(4) = 1/4',ok:false}],
+   ok:'1/(2√4) = 1/4. Exact anchor value + exact slope is the whole craft.'},
+  {t:'input', q:'Write L(x), then evaluate at x = 4.04. L(4.04) = ?',
+   accept:v=>{const n=parseFloat(norm(v));return !isNaN(n)&&Math.abs(n-2.01)<1e-9;},
+   fb:'L(x) = 2 + (1/4)(x − 4); the offset is 0.04/4 = 0.01.',
+   reveal:'2 + 0.04/4 = 2.01. (True √4.04 ≈ 2.00998 — five significant digits from one tangent.)',
+   placeholder:'e.g. 2.01'},
+  {t:'ask', q:'High or low? f″(x) = −1/(4x^(3/2)) is negative, so the curve bends DOWN (cap ∩) and its tangent lies…',
+   choices:[{txt:'ABOVE the curve: 2.01 is a slight OVERESTIMATE',ok:true},{txt:'below: an underestimate',ok:false},{txt:'exactly on: no error',ok:false}],
+   ok:'f″ < 0 ⇒ tangent above ⇒ overestimate — matching 2.01 &gt; 2.00998. The error direction is known WITHOUT the true value.'}
  ]}
 ];
 
@@ -1679,12 +2580,90 @@ const QUIZ=[
  {q:'A function f has an inverse f⁻¹ if and only if f is…',
   o:['one-to-one (passes the Horizontal Line Test)','continuous','linear','defined for all real x'],a:0,
   ex:'One-to-one means each output came from a unique input — required to “undo” unambiguously.'}
+]},
+{id:'set9', name:'Set 9 · Derivatives: Definition & Rules', topic:['DP','DP','DP','DF','DF','DF','RU','RU'], qs:[
+ {q:'By definition, f′(x₀) equals…',
+  o:['limₕ→0 [f(x₀+h) − f(x₀)] / h','[f(x₀+h) − f(x₀)] / h evaluated at h = 0','f(x₀+1) − f(x₀)','limₕ→0 f(x₀+h)'],a:0,
+  ex:'The derivative is the LIMIT of the difference quotient; plugging h = 0 gives 0/0.'},
+ {q:'For f(x) = x² at x₀ = 3, the difference quotient [(3+h)² − 9]/h simplifies to…',
+  o:['6 + h, whose limit is 6','h, whose limit is 0','6, with no limit step needed','9 + h'],a:0,
+  ex:'(9 + 6h + h² − 9)/h = 6 + h → 6. So f′(3) = 6.'},
+ {q:'The tangent line to y = f(x) at P(a, f(a)) is…',
+  o:['y = f(a) + f′(a)(x − a)','y = f′(a) x + f(a)','y = f(a) + f(x)(x − a)','y = f(a)(x − a) + f′(a)'],a:0,
+  ex:'Point-slope form: through (a, f(a)) with slope f′(a).'},
+ {q:'Reading graphs: where f is increasing, f′ is…',
+  o:['positive (the f′ curve is ABOVE the x-axis)','negative','zero','undefined'],a:0,
+  ex:'Increasing means positive tangent slope; f′ is the slope-function of f.'},
+ {q:'f(x) = |x| is not differentiable at x = 0 because…',
+  o:['the left slope −1 and right slope +1 disagree — a corner','it is discontinuous there','f(0) is undefined','the slope is 0 there'],a:0,
+  ex:'A corner: two one-sided difference-quotient limits exist but differ, so the two-sided limit fails.'},
+ {q:'Which implication is TRUE for every function?',
+  o:['Differentiable at a point ⇒ continuous there','Continuous at a point ⇒ differentiable there','Differentiable ⇒ discontinuous','Continuity and differentiability are unrelated'],a:0,
+  ex:'Differentiability implies continuity; the converse is FALSE — |x| is continuous at 0 but not differentiable.'},
+ {q:'y = 3x⁴ − 5x² + 2x − 7 ⇒ y′ = ?',
+  o:['12x³ − 10x + 2','12x³ − 10x + 2 − 7','3x³ − 5x + 2','12x³ − 5x + 2'],a:0,
+  ex:'Term by term: 12x³, −10x, +2; the constant −7 differentiates to 0.'},
+ {q:'y = (x² − 1)/(x² + 1) ⇒ y′ = ?',
+  o:['4x/(x² + 1)²','4x/(x² − 1)²','2x/(x² + 1)²','1 − 2/(x²+1)'],a:0,
+  ex:'Quotient rule: [2x(x²+1) − (x²−1)2x]/(x²+1)² = 4x/(x²+1)²; the cubic terms cancel.'}
+]},
+{id:'set10', name:'Set 10 · Rates, Trig & Chain Rule', topic:['MO','MO','MO','MO','TG','TG','TG','CR'], qs:[
+ {q:'For motion s(t) along a line, velocity and speed are…',
+  o:['v(t) = s′(t) (signed); speed = |v(t)|','v(t) = |s′(t)|; speed = s′(t)','both equal s″(t)','v(t) = s(t)/t; speed = v(t)/2'],a:0,
+  ex:'Velocity is signed (direction matters); speed is its absolute value, what the speedometer shows.'},
+ {q:'A ball is launched straight up. At the top of its path v = 0 for an instant. Its acceleration there is…',
+  o:['−g ≈ −9.8 m/s² — gravity does not pause','0, because it is momentarily stopped','+g, because it has started falling','undefined'],a:0,
+  ex:'v = 0 is a value of velocity; acceleration is how v is CHANGING. a = −g throughout the flight.'},
+ {q:'s(t) = t³ − 6t². The particle speeds up when v and a have the same sign. That happens on…',
+  o:['(0, 2) and (4, 6]','(2, 4) only','(0, 4) only','the whole interval [0, 6]'],a:0,
+  ex:'v = 3t(t−4), a = 6(t−2): both negative on (0,2), both positive on (4,6] ⇒ v·a > 0 there.'},
+ {q:'Cost C(x) = 0.02x² + 3x + 1000. The marginal cost at x = 100 uses C′(x) = 0.04x + 3 evaluated there, giving…',
+  o:['7 euros per additional unit','4 euros per additional unit','1700 euros','3 euros per additional unit'],a:0,
+  ex:'C′(100) = 4 + 3 = 7 — the approximate cost of the NEXT unit (a rate, not the total C(100)).'},
+ {q:'d/dx (sin x) = ? (angles in radians)',
+  o:['cos x','−cos x','−sin x','cos x + sin x'],a:0,
+  ex:'Sine differentiates to cosine; the clean formula holds only in radians and rests on lim sin h/h = 1.'},
+ {q:'d/dx (tan x) = ?',
+  o:['sec² x','sec x tan x','−csc² x','1 + tan x'],a:0,
+  ex:'(sin/cos)′ = (cos² + sin²)/cos² = 1/cos² = sec² x — positive on every branch, so tan is increasing.'},
+ {q:'y = sin x / x ⇒ y′ = ?',
+  o:['(x cos x − sin x)/x²','cos x / 1 = cos x','(x sin x − cos x)/x²','(cos x − x sin x)/x²'],a:0,
+  ex:'Quotient rule with u = sin x, v = x: (cos x · x − sin x · 1)/x².'},
+ {q:'[(3x² + 1)¹⁰]′ = ?',
+  o:['60x(3x² + 1)⁹','10(3x² + 1)⁹','10(6x)⁹','60x(3x² + 1)¹⁰'],a:0,
+  ex:'Chain rule: 10(3x²+1)⁹ · 6x. Forgetting the inner derivative 6x is the classic error.'}
+]},
+{id:'set11', name:'Set 11 · Implicit, Related Rates & Linearization', topic:['ID','ID','ID','RR','RR','RR','LZ','LZ'], qs:[
+ {q:'When y is an implicit function of x, d/dx (y³) = ?',
+  o:['3y² y′','3y²','3y² x','y³ y′'],a:0,
+  ex:'Power rule on y, then a chain-rule factor dy/dx = y′ because y = y(x).'},
+ {q:'For x² + y² = 25, implicit differentiation gives y′ = −x/y. At (3, 4) the tangent slope is…',
+  o:['−3/4','−4/3','3/4','4/3'],a:0,
+  ex:'−x/y at the point is −3/4; 4/3 is the slope of the NORMAL (radius), not the tangent.'},
+ {q:'On the folium x³ + y³ = 6xy, y′ = (2y − x²)/(y² − 2x). A HORIZONTAL tangent occurs when…',
+  o:['the numerator 2y − x² = 0 (denominator nonzero)','the denominator y² − 2x = 0','x = y = 0','both numerator and denominator vanish'],a:0,
+  ex:'A fraction is zero when its numerator is zero; a zero denominator instead signals a vertical tangent.'},
+ {q:'In a related-rates problem, the instant values (r = 10, etc.) should be substituted…',
+  o:['AFTER differentiating the linking equation with respect to time','before differentiating, to simplify the algebra','at the very start, so variables become constants','instead of differentiating'],a:0,
+  ex:'Early substitution freezes a variable into a constant; its derivative becomes 0 and the rate vanishes.'},
+ {q:'A balloon deflates at 50 cm³/s with V = (4/3)πr³. At r = 10 cm, dr/dt = ?',
+  o:['−1/(8π) cm/s','+1/(8π) cm/s','−1/(4π) cm/s','−50/10 = −5 cm/s'],a:0,
+  ex:'−50 = 4π(10)² dr/dt = 400π dr/dt ⇒ dr/dt = −1/(8π); negative records the shrinking.'},
+ {q:'A 5 m ladder: x² + y² = 25, foot pulled at dx/dt = 1 m/s. At y = 3 (so x = 4), dy/dt = ?',
+  o:['−4/3 m/s','−3/4 m/s','+4/3 m/s','−1 m/s'],a:0,
+  ex:'2x ẋ + 2y ẏ = 0 ⇒ ẏ = −x ẋ/y = −4·1/3. Negative = the top descends.'},
+ {q:'Linearizing f(x) = √x at a = 4 gives L(x) = 2 + (x−4)/4. The estimate of √4.04 is…',
+  o:['2.01 (true value ≈ 2.00998)','2.001','2.04','2.4'],a:0,
+  ex:'2 + 0.04/4 = 2.01 — one anchor value and one derivative buy five significant digits.'},
+ {q:'A cube’s side length is measured with 0.2% relative error. V = x³ then has relative error approximately…',
+  o:['3 × 0.2% = 0.6%','0.2%','(0.2%)³ = 0.008%','0.2%/3 ≈ 0.067%'],a:0,
+  ex:'Power rule of errors: dy/y = n·dx/x with n = 3. Powers MULTIPLY relative error; you do not cube the percent.'}
 ]}
 ];
-const TOPICS={DR:'Domain & range',FC:'Function concept & VLT',CP:'Composition',TR:'Shifts & scaling',RC:'Radians & unit circle',TM:'Trig modeling',TI:'Trig identities',SW:'Software & regression',RT:'Rates & tangents',LL:'Limit laws',EP:'ε–δ definition',OS:'One-sided & trig limits',CT:'Continuity & IVT',IN:'Limits at infinity',IV:'Inverse functions'};
+const TOPICS={DR:'Domain & range',FC:'Function concept & VLT',CP:'Composition',TR:'Shifts & scaling',RC:'Radians & unit circle',TM:'Trig modeling',TI:'Trig identities',SW:'Software & regression',RT:'Rates & tangents',LL:'Limit laws',EP:'ε–δ definition',OS:'One-sided & trig limits',CT:'Continuity & IVT',IN:'Limits at infinity',IV:'Inverse functions',DP:'Derivative at a point',DF:'Derivative as a function',RU:'Differentiation rules',MO:'Rates of change & motion',TG:'Trigonometric derivatives',CR:'Chain rule',ID:'Implicit differentiation',RR:'Related rates',LZ:'Linearization & differentials'};
 
 /* ============================================================
-   Word flashcards — key terminology of Chapters 1–2
+   Word flashcards — key terminology of Chapters 1–3
 ============================================================ */
 const WORDS=[
 {en:'function',zh:'函数',def:"A rule assigning exactly ONE output to each allowed input.",ex:"f(x) = 2x + 3 is a function: every x gives one f(x).",sec:'1.1'},
@@ -1745,4 +2724,38 @@ const WORDS=[
 {en:'oblique (slant) asymptote',zh:'斜渐近线',def:"A non-horizontal line y = mx + b approached as x → ±∞; occurs when numerator degree is one higher.",ex:"(x²+2x−1)/(x+1) hugs y = x + 1.",sec:'2.6'},
 {en:'dominant term',zh:'主导项',def:"The highest-power term that controls a polynomial’s size for large |x|.",ex:"In 3x² − 100x + 2, the 3x² dominates, so f(x)/x² → 3.",sec:'2.6'},
 {en:'infinite limit',zh:'无穷极限',def:"f(x) grows without bound (→ ∞ or −∞) near a finite point — the limit DNE, but the symbol records HOW.",ex:"limₓ→0⁺ 1/x = +∞; the vertical asymptote description.",sec:'2.6'},
+/* Chapter 3 */
+{en:'derivative',zh:'导数',def:"The limit of the difference quotient: f′(x₀) = limₕ→0 [f(x₀+h)−f(x₀)]/h — a number, a tangent slope, an instant rate.",ex:"For f(x) = x², f′(3) = 6.",sec:'3.1'},
+{en:'difference quotient',zh:'差商',def:"[f(x₀+h) − f(x₀)]/h — the slope of the secant, an average rate of change.",ex:"For 1/x at 2 it simplifies to −1/[2(2+h)] → −1/4.",sec:'3.1'},
+{en:'differentiation',zh:'求导',def:"The operation of producing f′ from f.",ex:"Differentiation of x²−3x gives 2x−3.",sec:'3.2'},
+{en:'differentiable',zh:'可导的',def:"f is differentiable at x if the difference-quotient limit exists there; its domain can be smaller than f’s.",ex:"|x| is not differentiable at 0.",sec:'3.2'},
+{en:'prime notation',zh:'撇号记号',def:"f′(x), y′ — Newton-flavoured notation for the derivative; Leibniz writes dy/dx.",ex:"f″ is the second derivative; f⁽⁴⁾ the fourth.",sec:'3.1'},
+{en:'normal line',zh:'法线',def:"The line through a point PERPENDICULAR to the tangent: slope −1/m.",ex:"For y = x³ at (1,1), the normal has slope −1/3.",sec:'3.3'},
+{en:'product rule',zh:'乘积法则',def:"(uv)′ = u′v + uv′ — take turns differentiating the factors.",ex:"(x² sin x)′ = 2x sin x + x² cos x.",sec:'3.3'},
+{en:'quotient rule',zh:'商的法则',def:"(u/v)′ = (u′v − uv′)/v² — subtract in order, square the bottom.",ex:"(sin x)/x → (x cos x − sin x)/x².",sec:'3.3'},
+{en:'power rule',zh:'幂法则',def:"(xⁿ)′ = n xⁿ⁻¹, valid for every real exponent n.",ex:"(∛x)′ = (1/3)x^(−2/3).",sec:'3.3'},
+{en:'higher derivatives',zh:'高阶导数',def:"Repeated differentiation: f″ = (f′)′, f‴ = (f″)′, …",ex:"x⁴ → 4x³ → 12x² → 24x → 24 → 0.",sec:'3.3'},
+{en:'displacement',zh:'位移',def:"Signed change in position Δs = s(t+Δt) − s(t); zero when you return to start.",ex:"Out 10 m and back: displacement 0, distance 20 m.",sec:'3.4'},
+{en:'velocity',zh:'速度',def:"v(t) = ds/dt — the signed instantaneous rate of position; speed is |v|.",ex:"s = t³−6t² gives v = 3t²−12t.",sec:'3.4'},
+{en:'speed',zh:'速率',def:"The magnitude |v(t)| of velocity — always non-negative, direction-free.",ex:"A speedometer shows speed, never a minus sign.",sec:'3.4'},
+{en:'acceleration',zh:'加速度',def:"a(t) = dv/dt = d²s/dt² — the rate of change of velocity.",ex:"In free fall a = −g ≈ −9.8 m/s², even at the top where v = 0.",sec:'3.4'},
+{en:'marginal cost',zh:'边际成本',def:"C′(x) — the instantaneous rate of cost, approximately the cost of producing one more unit.",ex:"C′(100) = 7 means the 101st unit costs about 7.",sec:'3.4'},
+{en:'free fall',zh:'自由落体',def:"Motion under constant gravity: s = s₀ + v₀t − ½gt² with g ≈ 9.8 m/s².",ex:"24.5t − 4.9t² reaches the top at t = 2.5 s.",sec:'3.4'},
+{en:'simple harmonic motion',zh:'简谐运动',def:"Oscillation obeying a = −ω²x, e.g. x = A cos(ωt + φ).",ex:"A mass on a spring or a swinging watch balance.",sec:'3.5'},
+{en:'composite function',zh:'复合函数',def:"A function nested in another: (f∘g)(x) = f(g(x)), with an inner and outer part.",ex:"(3x²+1)¹⁰ has outer u¹⁰, inner 3x²+1.",sec:'3.6'},
+{en:'chain rule',zh:'链式法则',def:"[f(g(x))]′ = f′(g(x))·g′(x); in Leibniz: dy/dx = dy/du · du/dx.",ex:"[(3x²+1)¹⁰]′ = 60x(3x²+1)⁹.",sec:'3.6'},
+{en:'inner / outer function',zh:'内层 / 外层函数',def:"The two layers of a composition; differentiate the outer shell first, inner left untouched.",ex:"For sin(5x), sin is outer, 5x is inner.",sec:'3.6'},
+{en:'explicit function',zh:'显函数',def:"A function solved into the form y = f(x).",ex:"y = √(25−x²) is the explicit upper semicircle.",sec:'3.7'},
+{en:'implicit differentiation',zh:'隐函数求导',def:"Differentiating F(x,y)=0 in x without solving for y; each y-term gains a y′ factor.",ex:"x²+y²=25 ⇒ 2x+2y y′=0 ⇒ y′=−x/y.",sec:'3.7'},
+{en:'folium of Descartes',zh:'笛卡尔叶形线',def:"The curve x³+y³=6xy with a leaf, a self-crossing at the origin, and asymptote x+y=−2.",ex:"Its slope is (2y−x²)/(y²−2x).",sec:'3.7'},
+{en:'related rates',zh:'相关变化率',def:"Rates of linked quantities, found by differentiating the linking equation with respect to time.",ex:"dV/dt = 4πr² dr/dt for a balloon.",sec:'3.8'},
+{en:'linking equation',zh:'联系方程',def:"The geometry/algebra equation relating the time-varying quantities before differentiation.",ex:"x²+y²=L² for a sliding ladder; V=(4/3)πr³ for a balloon.",sec:'3.8'},
+{en:'similar triangles',zh:'相似三角形',def:"Proportional-side triangles used to eliminate a variable (e.g. r = h/2 in a cone) before differentiating.",ex:"Cone R/H = 2/4 gives r = h/2, so V = πh³/12.",sec:'3.8'},
+{en:'linearization',zh:'线性化',def:"The tangent-line approximation L(x) = f(a) + f′(a)(x−a), valid near the anchor a.",ex:"√x at 4: L(x) = 2 + (x−4)/4 gives √4.04 ≈ 2.01.",sec:'3.9'},
+{en:'anchor point',zh:'锚点',def:"The nearby point a where f(a) and f′(a) are both easy EXACT values; the base of a linearization.",ex:"For √4.04 the anchor is a = 4, not 0 or 16.",sec:'3.9'},
+{en:'differential',zh:'微分',def:"dy = f′(x) dx — the tangent-predicted change, approximating the true change Δy.",ex:"For the sphere dV = (πd²/2) dd propagates diameter error.",sec:'3.9'},
+{en:'overestimate / underestimate',zh:'高估 / 低估',def:"Direction of the linearization error: f″<0 (cap) overestimates; f″>0 (cup) underestimates.",ex:"√x has f″<0, so 2.01 is slightly HIGH.",sec:'3.9'},
+{en:'relative error',zh:'相对误差',def:"Error as a fraction of the value: df/f; percentage error is 100·df/f.",ex:"For y=xⁿ, dy/y = n·dx/x — a cube triples relative error.",sec:'3.9'},
+{en:'error propagation',zh:'误差传递',def:"How input uncertainty passes through a formula: df = f′(x) dx magnifies input error by the derivative.",ex:"A 0.2% side error becomes 0.6% volume error for a cube.",sec:'3.9'},
+{en:'sensitivity',zh:'灵敏度',def:"The derivative viewed as the local magnification factor of an input change.",ex:"dV/dd = πd²/2 is the sphere’s sensitivity to diameter.",sec:'3.9'}
 ];
